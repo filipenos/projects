@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"sort"
 	"strings"
 
 	"github.com/urfave/cli"
@@ -179,65 +177,6 @@ func open(c *cli.Context) error {
 	return nil
 }
 
-//Project represent then project
-type Project struct {
-	Name string
-	Path string
-}
-
-//Projects represet all projects managed by
-type Projects struct {
-	Path     string
-	Projects []Project
-}
-
-func (p Projects) Len() int           { return len(p.Projects) }
-func (p Projects) Swap(i, j int)      { p.Projects[i], p.Projects[j] = p.Projects[j], p.Projects[i] }
-func (p Projects) Less(i, j int) bool { return p.Projects[i].Name < p.Projects[j].Name }
-
-//Add new project to manage
-func (p *Projects) Add(name, path string) {
-	p.Projects = append(p.Projects, Project{Name: name, Path: path})
-}
-
-//Save save the current projects on conf file
-func (p *Projects) Save() error {
-	file, err := os.Create(p.Path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	sort.Sort(p)
-
-	enc := json.NewEncoder(file)
-	//enc.SetIndent("", "  ") Only go 1.7
-	return enc.Encode(p.Projects)
-}
-
-//Load retrieve projects from config file
-func Load(path string) (*Projects, error) {
-	p := &Projects{Path: path}
-
-	file, err := os.Open(p.Path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return p, nil
-		}
-		return nil, err
-	}
-	defer file.Close()
-
-	if err := json.NewDecoder(file).Decode(&p.Projects); err != nil {
-		return nil, err
-	}
-	return p, nil
-}
-
 func log(msg string, args ...interface{}) {
 	fmt.Printf("[projects] %s\n", fmt.Sprintf(msg, args...))
-}
-
-func checkPath(path string) bool {
-	_, err := os.Stat(path)
-	return os.IsExist(err)
 }
