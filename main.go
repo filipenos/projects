@@ -30,6 +30,11 @@ func main() {
 			Action: addCurrent,
 		},
 		{
+			Name:   "remove",
+			Usage:  "remove project from projects",
+			Action: remove,
+		},
+		{
 			Name:   "list",
 			Usage:  "list the managed projects",
 			Action: list,
@@ -38,12 +43,6 @@ func main() {
 			Name:   "open",
 			Usage:  "open the path of project",
 			Action: open,
-			OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
-				if err != nil {
-					log("teste")
-				}
-				return nil
-			},
 		},
 	}
 	app.Name = "Projects"
@@ -65,6 +64,9 @@ func add(c *cli.Context) error {
 	if path == "" {
 		return fmt.Errorf("path is required")
 	}
+	if !checkPath(path) {
+		return fmt.Errorf("path is no exists")
+	}
 
 	projects, err := Load(filepath)
 	if err != nil {
@@ -82,6 +84,36 @@ func addCurrent(c *cli.Context) error {
 	pwd := os.Getenv("PWD")
 	paths := strings.Split(pwd, "/")
 	projects.Add(paths[len(paths)-1], pwd)
+	return projects.Save()
+}
+
+func remove(c *cli.Context) error {
+	name := strings.TrimSpace(c.Args().First())
+	if name == "" {
+		return fmt.Errorf("name is required")
+	}
+
+	projects, err := Load(filepath)
+	if err != nil {
+		return err
+	}
+
+	excluded := false
+	aux := make([]Project, 0, len(projects.Projects))
+	for i := range projects.Projects {
+		if projects.Projects[i].Name == name && !excluded {
+			excluded = true
+		} else {
+			aux = append(aux, projects.Projects[i])
+		}
+	}
+
+	if !excluded {
+		return fmt.Errorf("Project %s not found", name)
+	}
+
+	log("Project %s removed successfully!", name)
+	projects.Projects = aux
 	return projects.Save()
 }
 
@@ -115,13 +147,26 @@ func open(c *cli.Context) error {
 		}
 	}
 
+	if path == "" {
+		return fmt.Errorf("Project %s not found", name)
+	}
+
 	log("open path %s", path)
 
 	cmd := exec.Command("tmux", "new", "-s", name, "-c", path)
 	cmd.Stdin = os.Stdin
 	out, err := cmd.CombinedOutput()
-	log(string(out))
-	return err
+	if strings.Contains(string(out), "duplicate session") {
+		cmd = exec.Command("tmux", "attach", "-t", name)
+		cmd.Stdin = os.Stdin
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+	return nil
 }
 
 //Project represent then project
@@ -180,4 +225,9 @@ func Load(path string) (*Projects, error) {
 
 func log(msg string, args ...interface{}) {
 	fmt.Printf("[projects] %s\n", fmt.Sprintf(msg, args...))
+}
+
+func checkPath(path string) bool {
+	_, err := os.Stat(path)
+	return os.IsExist(err)
 }
