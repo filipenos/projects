@@ -20,7 +20,9 @@ func main() {
 	app.Commands = []cli.Command{
 		{
 			Name:      "add",
+			Aliases:   []string{"a"},
 			Usage:     "add new project",
+			UsageText: "project add <name> <path>",
 			ArgsUsage: "name path",
 			Action:    add,
 		},
@@ -30,32 +32,40 @@ func main() {
 			Action: addCurrent,
 		},
 		{
-			Name:   "remove",
-			Usage:  "remove project from projects",
-			Action: remove,
+			Name:      "remove",
+			Usage:     "remove project",
+			UsageText: "project remove <name>",
+			ArgsUsage: "name",
+			Action:    remove,
 		},
 		{
 			Name:   "list",
-			Usage:  "list the managed projects",
+			Usage:  "list projects",
 			Action: list,
 		},
 		{
-			Name:   "open",
-			Usage:  "open the path of project",
-			Action: open,
+			Name:      "open",
+			Usage:     "open project",
+			UsageText: "project open <name>",
+			ArgsUsage: "name",
+			Action:    open,
 		},
 	}
 	app.Name = "Projects"
-	app.Description = "Manage projects"
+	app.Usage = "Simple manager for your projects"
+	app.Description = "Manage local projects"
 	app.HideVersion = true
 	app.ExitErrHandler = func(c *cli.Context, err error) {
-		log("%v", err)
+		if err != nil {
+			log("%v", err)
+		}
 		return
 	}
 	app.Run(os.Args)
 }
 
 func add(c *cli.Context) error {
+	c.Args()
 	name := strings.TrimSpace(c.Args().Get(0))
 	if name == "" {
 		return fmt.Errorf("name is required")
@@ -123,7 +133,7 @@ func list(c *cli.Context) error {
 		return err
 	}
 	for _, p := range projects.Projects {
-		fmt.Printf("  Project= '%s' Path='%s'\n", p.Name, p.Path)
+		fmt.Printf("%s\n  %s\n", p.Name, p.Path)
 	}
 	return nil
 }
