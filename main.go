@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"sort"
@@ -39,13 +38,20 @@ func main() {
 			Name:   "open",
 			Usage:  "open the path of project",
 			Action: open,
+			OnUsageError: func(c *cli.Context, err error, isSubcommand bool) error {
+				if err != nil {
+					log("teste")
+				}
+				return nil
+			},
 		},
 	}
 	app.Name = "Projects"
 	app.Description = "Manage projects"
 	app.HideVersion = true
 	app.ExitErrHandler = func(c *cli.Context, err error) {
-		log.Println(err)
+		log("%v", err)
+		return
 	}
 	app.Run(os.Args)
 }
@@ -109,10 +115,12 @@ func open(c *cli.Context) error {
 		}
 	}
 
-	cmd := exec.Command("xdg-open", path)
-	// cmd.Dir = path
-	out, err := cmd.Output()
-	log.Println(string(out))
+	log("open path %s", path)
+
+	cmd := exec.Command("tmux", "new", "-s", name, "-c", path)
+	cmd.Stdin = os.Stdin
+	out, err := cmd.CombinedOutput()
+	log(string(out))
 	return err
 }
 
@@ -147,7 +155,7 @@ func (p *Projects) Save() error {
 	sort.Sort(p)
 
 	enc := json.NewEncoder(file)
-	enc.SetIndent("", "  ")
+	//enc.SetIndent("", "  ") Only go 1.7
 	return enc.Encode(p.Projects)
 }
 
@@ -168,4 +176,8 @@ func Load(path string) (*Projects, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+func log(msg string, args ...interface{}) {
+	fmt.Printf("[projects] %s\n", fmt.Sprintf(msg, args...))
 }
