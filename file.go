@@ -13,6 +13,10 @@ type Project struct {
 }
 
 //File represet all projects managed by
+//TODO adicionar map com id=index
+//TODO adicionar id, pode ser o nome se único
+//TODO validar path ao salvar, edit e add
+//TODO flags para add -c current
 type File struct {
 	Path     string
 	Projects []Project

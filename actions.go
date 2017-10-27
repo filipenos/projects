@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 
 	"github.com/urfave/cli"
 )
@@ -122,4 +123,71 @@ func open(c *cli.Context) error {
 		return err
 	}
 	return nil
+}
+
+func edit(c *cli.Context) error {
+	name := strings.TrimSpace(c.Args().First())
+	if name == "" {
+		return fmt.Errorf("name is required")
+	}
+
+	f, err := Load(filepath)
+	if err != nil {
+		return err
+	}
+
+	var p *Project
+	var index int
+	for i := range f.Projects {
+		if f.Projects[i].Name == name {
+			p = &f.Projects[i]
+			index = i
+			break
+		}
+	}
+	if p == nil {
+		return fmt.Errorf("project %s not found", name)
+	}
+
+	t, err := NewTempFile([]byte(""))
+	if err != nil {
+		return err
+	}
+	if t == nil {
+		return err
+	}
+	defer t.Remove()
+
+	d := `name={{.Name}}
+path={{.Path}}`
+
+	tmpl := template.Must(template.New("test").Parse(d))
+	if err := tmpl.Execute(t.osFile, p); err != nil {
+		return err
+	}
+
+	t.ReadFromUser()
+
+	if err := t.Close(); err != nil {
+		return err
+	}
+
+	editProject := parseContent(t.GetContent())
+	f.Projects[index] = editProject
+	return f.Save()
+}
+
+func parseContent(data []byte) (p Project) {
+	lines := strings.Split(string(data), "\n")
+	for i := range lines {
+		line := strings.TrimSpace(lines[i])
+		values := strings.Split(line, "=")
+		switch values[0] {
+		case "name":
+			p.Name = values[1]
+		case "path":
+			p.Path = values[1]
+		}
+	}
+	return
 }

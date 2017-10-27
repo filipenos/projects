@@ -23,6 +23,10 @@ func main() {
 			Action:    add,
 		},
 		{
+			Name:   "edit",
+			Action: edit,
+		},
+		{
 			Name:   "current",
 			Usage:  "add the current path as project",
 			Action: addCurrent,
