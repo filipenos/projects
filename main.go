@@ -63,7 +63,3 @@ func main() {
 	}
 	app.Run(os.Args)
 }
-
-func log(msg string, args ...interface{}) {
-	fmt.Printf("[projects] %s\n", fmt.Sprintf(msg, args...))
-}

@@ -5,7 +5,7 @@ import "testing"
 func TestNewTempFile(t *testing.T) {
 
 	s := "initial data to test"
-	f, err := NewTempFile([]byte(s))
+	f, err := NewTempFile()
 	if err != nil {
 		t.Fatalf("Unexpected error on create new temp file: %v", err)
 	}
@@ -13,12 +13,38 @@ func TestNewTempFile(t *testing.T) {
 		t.Fatalf("Unexpected <nil> on create new temp file")
 	}
 
+	n, err := f.Write([]byte(s))
+	if err != nil {
+		t.Fatalf("Unexpected error on write data: %v", err)
+	}
+	if len(s) != n {
+		t.Fatalf("Unexpected data write %d, expect %d", n, len(s))
+	}
+
 	if err := f.Close(); err != nil {
 		t.Fatalf("Unexpected error on close temp file: %v", err)
 	}
 
-	content := f.GetContent()
-	if len(content) == 0 {
-		t.Fatalf("Unexpected 0 content")
+	name := f.Name()
+	t.Logf("Created file %s", name)
+
+	if !isExist(name) {
+		t.Errorf("Temp file not exists")
+	}
+
+	content, err := f.GetContent()
+	if err != nil {
+		t.Fatalf("Unexpected error on get content: %v", err)
+	}
+	if string(content) != s {
+		t.Fatalf("Unexpected content '%s', expect '%s", string(content), s)
+	}
+
+	if err := f.Remove(); err != nil {
+		t.Fatalf("Unexpected error on remove temp file: %v", err)
+	}
+
+	if isExist(name) {
+		t.Fatalf("Temp file exist, no removed")
 	}
 }

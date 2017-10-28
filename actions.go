@@ -20,7 +20,7 @@ func add(c *cli.Context) error {
 	if path == "" {
 		return fmt.Errorf("path is required")
 	}
-	if !checkPath(path) {
+	if !isExist(path) {
 		return fmt.Errorf("path is no exists")
 	}
 
@@ -149,30 +149,31 @@ func edit(c *cli.Context) error {
 		return fmt.Errorf("project %s not found", name)
 	}
 
-	t, err := NewTempFile([]byte(""))
+	tmp, err := NewTempFile()
 	if err != nil {
 		return err
 	}
-	if t == nil {
-		return err
-	}
-	defer t.Remove()
+	defer tmp.Remove()
 
 	d := `name={{.Name}}
 path={{.Path}}`
 
 	tmpl := template.Must(template.New("test").Parse(d))
-	if err := tmpl.Execute(t.osFile, p); err != nil {
+	if err := tmpl.Execute(tmp, p); err != nil {
 		return err
 	}
 
-	t.ReadFromUser()
+	tmp.ReadFromUser()
 
-	if err := t.Close(); err != nil {
+	if err := tmp.Close(); err != nil {
 		return err
 	}
 
-	editProject := parseContent(t.GetContent())
+	content, err := tmp.GetContent()
+	if err != nil {
+		return err
+	}
+	editProject := parseContent(content)
 	f.Projects[index] = editProject
 	return f.Save()
 }

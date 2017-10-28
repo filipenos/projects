@@ -63,8 +63,3 @@ func Load(path string) (*File, error) {
 	}
 	return f, nil
 }
-
-func checkPath(path string) bool {
-	_, err := os.Stat(path)
-	return os.IsExist(err)
-}
