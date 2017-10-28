@@ -17,25 +17,35 @@ var (
 func add(c *cli.Context) error {
 	c.Args()
 
-	var name, path string
+	var (
+		p   = &Project{}
+		err error
+	)
+
 	if c.Bool("current") {
 		pwd := os.Getenv("PWD")
 		paths := strings.Split(pwd, "/")
 
-		name = paths[len(paths)-1]
-		path = pwd
+		p.Name = strings.TrimSpace(paths[len(paths)-1])
+		p.Path = strings.TrimSpace(pwd)
+	} else if c.Bool("editor") {
+		p, err = editProject(p)
+		if err != nil {
+			return err
+		}
 	} else {
-		name = strings.TrimSpace(c.Args().Get(0))
-		if name == "" {
-			return fmt.Errorf("name is required")
-		}
-		path = strings.TrimSpace(c.Args().Get(1))
-		if path == "" {
-			return fmt.Errorf("path is required")
-		}
+		p.Name = strings.TrimSpace(c.Args().Get(0))
+		p.Path = strings.TrimSpace(c.Args().Get(1))
 	}
 
-	if !isExist(path) {
+	if p.Name == "" {
+		return fmt.Errorf("name is required")
+	}
+	if p.Path == "" {
+		return fmt.Errorf("path is required")
+	}
+
+	if !isExist(p.Path) {
 		return fmt.Errorf("path is no exists")
 	}
 
@@ -43,7 +53,7 @@ func add(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	projects.Add(name, path)
+	projects.AddProject(*p)
 	return projects.Save()
 }
 
@@ -171,7 +181,7 @@ func editProject(p *Project) (*Project, error) {
 	d := `name={{.Name}}
 path={{.Path}}`
 
-	tmpl := template.Must(template.New("test").Parse(d))
+	tmpl := template.Must(template.New("editor").Parse(d))
 	if err := tmpl.Execute(tmp, p); err != nil {
 		return nil, err
 	}
@@ -195,11 +205,14 @@ func parseContent(data []byte) *Project {
 	for i := range lines {
 		line := strings.TrimSpace(lines[i])
 		values := strings.Split(line, "=")
+		if len(values) != 2 {
+			continue
+		}
 		switch values[0] {
 		case "name":
-			p.Name = values[1]
+			p.Name = strings.TrimSpace(values[1])
 		case "path":
-			p.Path = values[1]
+			p.Path = strings.TrimSpace(values[1])
 		}
 	}
 	return p

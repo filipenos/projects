@@ -31,6 +31,10 @@ func (f *File) Add(name, path string) {
 	f.Projects = append(f.Projects, Project{Name: name, Path: path})
 }
 
+func (f *File) AddProject(p Project) {
+	f.Projects = append(f.Projects, p)
+}
+
 //Save save the current projects on conf file
 func (f *File) Save() error {
 	file, err := os.Create(f.Path)
