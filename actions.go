@@ -136,22 +136,31 @@ func edit(c *cli.Context) error {
 		return err
 	}
 
-	var p *Project
 	var index int
 	for i := range f.Projects {
 		if f.Projects[i].Name == name {
-			p = &f.Projects[i]
 			index = i
 			break
 		}
 	}
+	p := &f.Projects[index]
 	if p == nil {
 		return fmt.Errorf("project %s not found", name)
 	}
 
-	tmp, err := NewTempFile()
+	edited, err := editProject(p)
 	if err != nil {
 		return err
+	}
+
+	f.Projects[index] = *edited
+	return f.Save()
+}
+
+func editProject(p *Project) (*Project, error) {
+	tmp, err := NewTempFile()
+	if err != nil {
+		return nil, err
 	}
 	defer tmp.Remove()
 
@@ -160,26 +169,25 @@ path={{.Path}}`
 
 	tmpl := template.Must(template.New("test").Parse(d))
 	if err := tmpl.Execute(tmp, p); err != nil {
-		return err
+		return nil, err
 	}
 
 	tmp.ReadFromUser()
 
 	if err := tmp.Close(); err != nil {
-		return err
+		return nil, err
 	}
 
 	content, err := tmp.GetContent()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	editProject := parseContent(content)
-	f.Projects[index] = editProject
-	return f.Save()
+	return parseContent(content), nil
 }
 
-func parseContent(data []byte) (p Project) {
+func parseContent(data []byte) *Project {
 	lines := strings.Split(string(data), "\n")
+	p := &Project{}
 	for i := range lines {
 		line := strings.TrimSpace(lines[i])
 		values := strings.Split(line, "=")
@@ -190,5 +198,5 @@ func parseContent(data []byte) (p Project) {
 			p.Path = values[1]
 		}
 	}
-	return
+	return p
 }
