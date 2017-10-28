@@ -1,14 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/urfave/cli"
-)
-
-var (
-	filepath = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
 )
 
 func main() {

@@ -10,6 +10,10 @@ import (
 	"github.com/urfave/cli"
 )
 
+var (
+	filepath = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
+)
+
 func add(c *cli.Context) error {
 	c.Args()
 
