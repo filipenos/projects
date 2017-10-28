@@ -43,17 +43,6 @@ func add(c *cli.Context) error {
 	return projects.Save()
 }
 
-func addCurrent(c *cli.Context) error {
-	projects, err := Load(filepath)
-	if err != nil {
-		return err
-	}
-	pwd := os.Getenv("PWD")
-	paths := strings.Split(pwd, "/")
-	projects.Add(paths[len(paths)-1], pwd)
-	return projects.Save()
-}
-
 func remove(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {

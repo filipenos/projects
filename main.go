@@ -34,11 +34,6 @@ func main() {
 			Action:    edit,
 		},
 		{
-			Name:   "current",
-			Usage:  "add the current path as project",
-			Action: addCurrent,
-		},
-		{
 			Name:      "remove",
 			Aliases:   []string{"r"},
 			Usage:     "remove project",
@@ -54,6 +49,7 @@ func main() {
 		},
 		{
 			Name:      "open",
+			Aliases:   []string{"o"},
 			Usage:     "open project",
 			UsageText: "project open <name>",
 			ArgsUsage: "name",
