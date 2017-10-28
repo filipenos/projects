@@ -12,14 +12,25 @@ import (
 
 func add(c *cli.Context) error {
 	c.Args()
-	name := strings.TrimSpace(c.Args().Get(0))
-	if name == "" {
-		return fmt.Errorf("name is required")
+
+	var name, path string
+	if c.Bool("current") {
+		pwd := os.Getenv("PWD")
+		paths := strings.Split(pwd, "/")
+
+		name = paths[len(paths)-1]
+		path = pwd
+	} else {
+		name = strings.TrimSpace(c.Args().Get(0))
+		if name == "" {
+			return fmt.Errorf("name is required")
+		}
+		path = strings.TrimSpace(c.Args().Get(1))
+		if path == "" {
+			return fmt.Errorf("path is required")
+		}
 	}
-	path := strings.TrimSpace(c.Args().Get(1))
-	if path == "" {
-		return fmt.Errorf("path is required")
-	}
+
 	if !isExist(path) {
 		return fmt.Errorf("path is no exists")
 	}

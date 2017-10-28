@@ -15,16 +15,23 @@ func main() {
 	app := cli.NewApp()
 	app.Commands = []cli.Command{
 		{
-			Name:      "add",
-			Aliases:   []string{"a"},
+			Name:    "add",
+			Aliases: []string{"a"},
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "current", Usage: "use current path to add"},
+			},
 			Usage:     "add new project",
 			UsageText: "project add <name> <path>",
 			ArgsUsage: "name path",
 			Action:    add,
 		},
 		{
-			Name:   "edit",
-			Action: edit,
+			Name:      "edit",
+			Aliases:   []string{"e"},
+			Usage:     "edit project config",
+			UsageText: "project edit <name>",
+			ArgsUsage: "name",
+			Action:    edit,
 		},
 		{
 			Name:   "current",
@@ -33,15 +40,17 @@ func main() {
 		},
 		{
 			Name:      "remove",
+			Aliases:   []string{"r"},
 			Usage:     "remove project",
 			UsageText: "project remove <name>",
 			ArgsUsage: "name",
 			Action:    remove,
 		},
 		{
-			Name:   "list",
-			Usage:  "list projects",
-			Action: list,
+			Name:    "list",
+			Aliases: []string{"l"},
+			Usage:   "list projects",
+			Action:  list,
 		},
 		{
 			Name:      "open",
