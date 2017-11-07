@@ -13,8 +13,8 @@ func main() {
 			Name:    "add",
 			Aliases: []string{"a"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "current", Usage: "use current path to add"},
-				cli.BoolFlag{Name: "editor", Usage: "use default editor to add"},
+				cli.BoolFlag{Name: "c, current", Usage: "use current path to add"},
+				cli.BoolFlag{Name: "e, editor", Usage: "use default editor to add"},
 			},
 			Usage:     "add new project",
 			UsageText: "project add <name> <path>",
