@@ -40,8 +40,13 @@ func main() {
 		{
 			Name:    "list",
 			Aliases: []string{"l"},
-			Usage:   "list projects",
-			Action:  list,
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "s, show-path", Usage: "show path of projects"},
+			},
+			Usage:     "list projects",
+			UsageText: "project list <options>",
+			ArgsUsage: "<options>",
+			Action:    list,
 		},
 		{
 			Name:      "open",

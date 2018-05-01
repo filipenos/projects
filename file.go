@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"sort"
+	"strings"
 )
 
 //Project represent then project
@@ -33,6 +34,16 @@ func (f *File) Add(name, path string) {
 
 func (f *File) AddProject(p Project) {
 	f.Projects = append(f.Projects, p)
+}
+
+func (f *File) Get(name string) (*Project, int) {
+	name = strings.TrimSpace(name)
+	for i := range f.Projects {
+		if f.Projects[i].Name == name {
+			return &f.Projects[i], i
+		}
+	}
+	return nil, -1
 }
 
 //Save save the current projects on conf file

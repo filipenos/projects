@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,7 +12,8 @@ import (
 )
 
 var (
-	filepath = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
+	filepath      = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
+	ErrUnmodified = errors.New("Unmodified")
 )
 
 func add(c *cli.Context) error {
@@ -28,14 +30,16 @@ func add(c *cli.Context) error {
 
 		p.Name = strings.TrimSpace(paths[len(paths)-1])
 		p.Path = strings.TrimSpace(pwd)
-	} else if c.Bool("editor") {
+	} else {
+		p.Name = strings.TrimSpace(c.Args().Get(0))
+		p.Path = strings.TrimSpace(c.Args().Get(1))
+	}
+
+	if c.Bool("editor") {
 		p, err = editProject(p)
 		if err != nil {
 			return err
 		}
-	} else {
-		p.Name = strings.TrimSpace(c.Args().Get(0))
-		p.Path = strings.TrimSpace(c.Args().Get(1))
 	}
 
 	if p.Name == "" {
@@ -53,8 +57,17 @@ func add(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	if p, _ := projects.Get(p.Name); p != nil {
+		return fmt.Errorf("project '%s' already add to projects", p.Name)
+	}
+
 	projects.AddProject(*p)
-	return projects.Save()
+	if err := projects.Save(); err != nil {
+		return err
+	}
+	log("Add project: '%s' path: '%s'", p.Name, p.Path)
+	return nil
 }
 
 func remove(c *cli.Context) error {
@@ -79,10 +92,10 @@ func remove(c *cli.Context) error {
 	}
 
 	if !excluded {
-		return fmt.Errorf("Project %s not found", name)
+		return fmt.Errorf("Project '%s' not found", name)
 	}
 
-	log("Project %s removed successfully!", name)
+	log("Project '%s' removed successfully!", name)
 	projects.Projects = aux
 	return projects.Save()
 }
@@ -92,10 +105,14 @@ func list(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	for _, p := range projects.Projects {
-		fmt.Printf("%s\n  %s\n", p.Name, p.Path)
-	}
-	return nil
+
+	t := `{{range .Projects.Projects}}Ǹame: {{.Name}}{{if $.ShowPath}}
+	Path: {{.Path}}{{end}}
+{{else}}No projects yeat!
+{{end}}`
+	tmpl := template.Must(template.New("editor").Parse(t))
+	ctx := map[string]interface{}{"Projects": projects, "ShowPath": c.Bool("show-path")}
+	return tmpl.Execute(os.Stdout, ctx)
 }
 
 func open(c *cli.Context) error {
@@ -118,10 +135,10 @@ func open(c *cli.Context) error {
 	}
 
 	if path == "" {
-		return fmt.Errorf("Project %s not found", name)
+		return fmt.Errorf("Project '%s' not found", name)
 	}
 
-	log("open path %s", path)
+	log("open path '%s'", path)
 
 	cmd := exec.Command("tmux", "new", "-s", name, "-c", path)
 	cmd.Stdin = os.Stdin
@@ -145,30 +162,36 @@ func edit(c *cli.Context) error {
 		return fmt.Errorf("name is required")
 	}
 
-	f, err := Load(filepath)
+	projects, err := Load(filepath)
 	if err != nil {
 		return err
 	}
 
-	var index int
-	for i := range f.Projects {
-		if f.Projects[i].Name == name {
-			index = i
-			break
-		}
+	_, index := projects.Get(name)
+	if index == -1 {
+		return fmt.Errorf("project '%s' not found", name)
 	}
-	p := &f.Projects[index]
+	p := &projects.Projects[index]
 	if p == nil {
-		return fmt.Errorf("project %s not found", name)
+		return fmt.Errorf("project '%s' not found", name)
 	}
 
 	edited, err := editProject(p)
 	if err != nil {
 		return err
 	}
+	if edited.Name == "" {
+		return fmt.Errorf("name is required")
+	}
+	if edited.Path == "" {
+		return fmt.Errorf("path is required")
+	}
+	if !isExist(edited.Path) {
+		return fmt.Errorf("path is no exists")
+	}
 
-	f.Projects[index] = *edited
-	return f.Save()
+	projects.Projects[index] = *edited
+	return projects.Save()
 }
 
 func editProject(p *Project) (*Project, error) {
@@ -217,3 +240,5 @@ func parseContent(data []byte) *Project {
 	}
 	return p
 }
+
+func checkRequirements() {}
