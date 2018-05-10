@@ -16,7 +16,7 @@ var (
 	ErrUnmodified = errors.New("Unmodified")
 )
 
-func add(c *cli.Context) error {
+func create(c *cli.Context) error {
 	c.Args()
 
 	var (
@@ -73,7 +73,7 @@ func add(c *cli.Context) error {
 	return nil
 }
 
-func remove(c *cli.Context) error {
+func delete(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
 		return fmt.Errorf("name is required")
@@ -165,7 +165,7 @@ func open(c *cli.Context) error {
 	return nil
 }
 
-func edit(c *cli.Context) error {
+func update(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
 		return fmt.Errorf("name is required")
