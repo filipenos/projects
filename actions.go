@@ -106,7 +106,7 @@ func list(c *cli.Context) error {
 		return err
 	}
 
-	t := `{{range .Projects.Projects}}Ǹame: {{.Name}}{{if $.ShowPath}}
+	t := `{{range .Projects.Projects}}Name: {{.Name}}{{if $.ShowPath}}
 	Path: {{.Path}}{{end}}
 {{else}}No projects yeat!
 {{end}}`
@@ -140,7 +140,12 @@ func open(c *cli.Context) error {
 
 	log("open path '%s'", path)
 
-	cmd := exec.Command("tmux", "new", "-s", name, "-c", path)
+	cmd := exec.Command("tmux", "new", "-s", name, "-n", name, "-c", path)
+	//option -d run tmux with daemon
+	// tmux new-session -d -s mySession -n myWindow
+	// tmux send-keys -t mySession:myWindow "cd /my/directory" Enter
+	// tmux send-keys -t mySession:myWindow "vim" Enter
+	// tmux attach -t mySession:myWindow
 	cmd.Stdin = os.Stdin
 	out, err := cmd.CombinedOutput()
 	if strings.Contains(string(out), "duplicate session") {
