@@ -33,6 +33,7 @@ func add(c *cli.Context) error {
 	} else {
 		p.Name = strings.TrimSpace(c.Args().Get(0))
 		p.Path = strings.TrimSpace(c.Args().Get(1))
+		p.SCM = strings.TrimSpace(c.Args().Get(2))
 	}
 
 	if c.Bool("editor") {
@@ -45,12 +46,14 @@ func add(c *cli.Context) error {
 	if p.Name == "" {
 		return fmt.Errorf("name is required")
 	}
-	if p.Path == "" {
-		return fmt.Errorf("path is required")
-	}
 
-	if !isExist(p.Path) {
-		return fmt.Errorf("path is no exists")
+	if c.Bool("validate-path") {
+		if p.Path == "" {
+			return fmt.Errorf("path is required")
+		}
+		if !isExist(p.Path) {
+			return fmt.Errorf("path is no exists")
+		}
 	}
 
 	projects, err := Load(filepath)
@@ -106,12 +109,13 @@ func list(c *cli.Context) error {
 		return err
 	}
 
-	t := `{{range .Projects.Projects}}Name: {{.Name}}{{if $.ShowPath}}
-	Path: {{.Path}}{{end}}
+	t := `{{range .Projects.Projects}}Name: {{.Name}}{{if $.Full}}
+	Path: {{.Path}}
+	SMC: {{.SCM}}{{end}}
 {{else}}No projects yeat!
 {{end}}`
 	tmpl := template.Must(template.New("editor").Parse(t))
-	ctx := map[string]interface{}{"Projects": projects, "ShowPath": c.Bool("show-path")}
+	ctx := map[string]interface{}{"Projects": projects, "Full": c.Bool("full")}
 	return tmpl.Execute(os.Stdout, ctx)
 }
 
@@ -188,11 +192,13 @@ func edit(c *cli.Context) error {
 	if edited.Name == "" {
 		return fmt.Errorf("name is required")
 	}
-	if edited.Path == "" {
-		return fmt.Errorf("path is required")
-	}
-	if !isExist(edited.Path) {
-		return fmt.Errorf("path is no exists")
+	if c.Bool("validate-path") {
+		if edited.Path == "" {
+			return fmt.Errorf("path is required")
+		}
+		if !isExist(edited.Path) {
+			return fmt.Errorf("path is no exists")
+		}
 	}
 
 	projects.Projects[index] = *edited
@@ -207,7 +213,8 @@ func editProject(p *Project) (*Project, error) {
 	defer tmp.Remove()
 
 	d := `name={{.Name}}
-path={{.Path}}`
+path={{.Path}}
+scm={{.SCM}}`
 
 	tmpl := template.Must(template.New("editor").Parse(d))
 	if err := tmpl.Execute(tmp, p); err != nil {
@@ -241,9 +248,48 @@ func parseContent(data []byte) *Project {
 			p.Name = strings.TrimSpace(values[1])
 		case "path":
 			p.Path = strings.TrimSpace(values[1])
+		case "scm":
+			p.SCM = strings.TrimSpace(values[1])
+		case "scmtype":
+			p.SCMType = strings.TrimSpace(values[1])
 		}
 	}
 	return p
+}
+
+func getProject(c *cli.Context) error {
+	name := strings.TrimSpace(c.Args().First())
+	if name == "" {
+		return fmt.Errorf("name is required")
+	}
+
+	projects, err := Load(filepath)
+	if err != nil {
+		return err
+	}
+
+	_, index := projects.Get(name)
+	if index == -1 {
+		return fmt.Errorf("project '%s' not found", name)
+	}
+	p := &projects.Projects[index]
+	if p == nil {
+		return fmt.Errorf("project '%s' not found", name)
+	}
+	if p.SCM == "" {
+		return errorf("project '%s' dont have scm configured", p.Name)
+	}
+	if isExist(p.Path) {
+		return errorf("path '%s' of project '%s' already exists", p.Path, p.Name)
+	}
+
+	cmd := exec.Command("git", "clone", p.SCM, p.Path)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+	log(string(out))
+	return nil
 }
 
 func checkRequirements() {}

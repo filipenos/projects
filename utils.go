@@ -16,3 +16,7 @@ func isExist(path string) bool {
 func log(msg string, args ...interface{}) {
 	fmt.Printf("[projects] %s\n", fmt.Sprintf(msg, args...))
 }
+
+func errorf(msg string, args ...interface{}) error {
+	return fmt.Errorf("%s", fmt.Sprintf(msg, args...))
+}

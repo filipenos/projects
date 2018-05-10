@@ -15,16 +15,20 @@ func main() {
 			Flags: []cli.Flag{
 				cli.BoolFlag{Name: "c, current", Usage: "use current path to add"},
 				cli.BoolFlag{Name: "e, editor", Usage: "use default editor to add"},
+				cli.BoolFlag{Name: "v, validate-path", Usage: "this option allow to validate if path exists"},
 			},
 			Usage:     "add new project",
-			UsageText: "project add <name> <path>",
-			ArgsUsage: "name path",
+			UsageText: "project add <name> <path> <scm>",
+			ArgsUsage: "name path scm",
 			Action:    add,
 		},
 		{
-			Name:      "edit",
-			Aliases:   []string{"e"},
-			Usage:     "edit project config",
+			Name:    "edit",
+			Aliases: []string{"e"},
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "v, validate-path", Usage: "this option allow to validate if path exists"},
+			},
+			Usage:     "edit project",
 			UsageText: "project edit <name>",
 			ArgsUsage: "name",
 			Action:    edit,
@@ -41,7 +45,7 @@ func main() {
 			Name:    "list",
 			Aliases: []string{"l"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "s, show-path", Usage: "show path of projects"},
+				cli.BoolFlag{Name: "f, full", Usage: "show full info about project"},
 			},
 			Usage:     "list projects",
 			UsageText: "project list <options>",
@@ -55,6 +59,14 @@ func main() {
 			UsageText: "project open <name>",
 			ArgsUsage: "name",
 			Action:    open,
+		},
+		{
+			Name:      "get",
+			Aliases:   []string{"g"},
+			Usage:     "get project",
+			UsageText: "project get <name>",
+			ArgsUsage: "name",
+			Action:    getProject,
 		},
 	}
 	app.Name = "Projects"
