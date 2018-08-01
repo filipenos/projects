@@ -61,6 +61,14 @@ func main() {
 			Action:    open,
 		},
 		{
+			Name:      "edit",
+			Aliases:   []string{"e"},
+			Usage:     "edit project",
+			UsageText: "project edit <name>",
+			ArgsUsage: "name",
+			Action:    edit,
+		},
+		{
 			Name:      "get",
 			Aliases:   []string{"g"},
 			Usage:     "get project",

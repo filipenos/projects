@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	filepath      = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
+	filepath      = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME")) // TODO extension Project Manager of vscode save the file in ~/.config/Code/User
 	ErrUnmodified = errors.New("Unmodified")
 )
 
@@ -162,6 +162,40 @@ func open(c *cli.Context) error {
 	} else {
 		return err
 	}
+	return nil
+}
+
+func edit(c *cli.Context) error {
+	name := strings.TrimSpace(c.Args().First())
+	if name == "" {
+		return errorf("name is required")
+	}
+
+	projects, err := Load(filepath)
+	if err != nil {
+		return err
+	}
+
+	p, _ := projects.Get(name)
+	if p == nil {
+		return errorf("project '%s' not found", name)
+	}
+	if p.Path == "" {
+		return fmt.Errorf("project '%s' dont have path", p.Name)
+	}
+	if !isExist(p.Path) {
+		return fmt.Errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
+	}
+
+	cmd := exec.Command("code", p.Path)
+	//cmd := exec.Command("gvim", fmt.Sprintf(`+"cd %s"`, p.Path))
+	log("%s", cmd.Args)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+	log("%s", out)
+
 	return nil
 }
 

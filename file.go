@@ -9,8 +9,8 @@ import (
 
 //Project represent then project
 type Project struct {
-	Name    string `json:",omitempty"`
-	Path    string `json:",omitempty"`
+	Name    string `json:"name,omitempty"`
+	Path    string `json:"rootPath,omitempty"`
 	SCM     string `json:",omitempty"`
 	SCMType string `json:",omitempty"`
 }
