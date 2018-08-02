@@ -55,7 +55,7 @@ func main() {
 		{
 			Name:      "open",
 			Aliases:   []string{"o"},
-			Usage:     "open project",
+			Usage:     "open project using tmux",
 			UsageText: "project open <name>",
 			ArgsUsage: "name",
 			Action:    open,
@@ -63,7 +63,7 @@ func main() {
 		{
 			Name:      "edit",
 			Aliases:   []string{"e"},
-			Usage:     "edit project",
+			Usage:     "edit project using vscode",
 			UsageText: "project edit <name>",
 			ArgsUsage: "name",
 			Action:    edit,
