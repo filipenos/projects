@@ -191,14 +191,12 @@ func edit(c *cli.Context) error {
 		return errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
 	}
 
-	cmd := exec.Command("code", p.Path)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return err
-	}
-	log("%s", out)
+	log("opening %s to edit", p.Name)
 
-	return nil
+	cmd := exec.Command("code", p.Path)
+	// cmd := exec.Command("vim", "--cmd", fmt.Sprintf(`"cd %s"`, p.Path))
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }
 
 func update(c *cli.Context) error {
