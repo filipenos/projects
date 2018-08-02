@@ -27,7 +27,6 @@ func create(c *cli.Context) error {
 	} else {
 		p.Name = strings.TrimSpace(c.Args().Get(0))
 		p.Path = strings.TrimSpace(c.Args().Get(1))
-		p.SCM = strings.TrimSpace(c.Args().Get(2))
 	}
 
 	if c.Bool("editor") {
@@ -107,8 +106,7 @@ func list(c *cli.Context) error {
 	}
 
 	t := `{{range .Projects.Projects}}Name: {{.Name}}{{if $.Full}}
-	Path: {{.Path}}
-	SMC: {{.SCM}}{{end}}
+  Path: {{.Path}}{{end}}
 {{else}}No projects yeat!
 {{end}}`
 	tmpl := template.Must(template.New("editor").Parse(t))
@@ -247,8 +245,7 @@ func editProject(p *Project) (*Project, error) {
 	defer tmp.Remove()
 
 	d := `name={{.Name}}
-path={{.Path}}
-scm={{.SCM}}`
+path={{.Path}}`
 
 	tmpl := template.Must(template.New("editor").Parse(d))
 	if err := tmpl.Execute(tmp, p); err != nil {
@@ -282,49 +279,7 @@ func parseContent(data []byte) *Project {
 			p.Name = strings.TrimSpace(values[1])
 		case "path":
 			p.Path = strings.TrimSpace(values[1])
-		case "scm":
-			p.SCM = strings.TrimSpace(values[1])
-		case "scmtype":
-			p.SCMType = strings.TrimSpace(values[1])
 		}
 	}
 	return p
 }
-
-func getProject(c *cli.Context) error {
-	name := strings.TrimSpace(c.Args().First())
-	if name == "" {
-		return fmt.Errorf("name is required")
-	}
-
-	s := LoadSettings()
-	projects, err := Load(s)
-	if err != nil {
-		return err
-	}
-
-	_, index := projects.Get(name)
-	if index == -1 {
-		return fmt.Errorf("project '%s' not found", name)
-	}
-	p := &projects.Projects[index]
-	if p == nil {
-		return fmt.Errorf("project '%s' not found", name)
-	}
-	if p.SCM == "" {
-		return errorf("project '%s' dont have scm configured", p.Name)
-	}
-	if isExist(p.Path) {
-		return errorf("path '%s' of project '%s' already exists", p.Path, p.Name)
-	}
-
-	cmd := exec.Command("git", "clone", p.SCM, p.Path)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return err
-	}
-	log(string(out))
-	return nil
-}
-
-func checkRequirements() {}

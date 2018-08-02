@@ -18,8 +18,8 @@ func main() {
 				cli.BoolFlag{Name: "v, validate-path", Usage: "this option allow to validate if path exists"},
 			},
 			Usage:     "create new project",
-			UsageText: "project create <name> <path> <scm>",
-			ArgsUsage: "name path scm",
+			UsageText: "project create <name> <path>",
+			ArgsUsage: "name path",
 			Action:    create,
 		},
 		{
@@ -67,14 +67,6 @@ func main() {
 			UsageText: "project edit <name>",
 			ArgsUsage: "name",
 			Action:    edit,
-		},
-		{
-			Name:      "get",
-			Aliases:   []string{"g"},
-			Usage:     "get project",
-			UsageText: "project get <name>",
-			ArgsUsage: "name",
-			Action:    getProject,
 		},
 	}
 	app.Name = "Projects"
