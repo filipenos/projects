@@ -11,7 +11,7 @@ func main() {
 	app.Commands = []cli.Command{
 		{
 			Name:    "create",
-			Aliases: []string{"c"},
+			Aliases: []string{"c", "add"},
 			Flags: []cli.Flag{
 				cli.BoolFlag{Name: "c, current", Usage: "use current path to add"},
 				cli.BoolFlag{Name: "e, editor", Usage: "use default editor to add"},
@@ -35,7 +35,7 @@ func main() {
 		},
 		{
 			Name:      "delete",
-			Aliases:   []string{"r"},
+			Aliases:   []string{"d", "rm"},
 			Usage:     "delete project",
 			UsageText: "project delete <name>",
 			ArgsUsage: "name",

@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"sort"
 	"strings"
 )
 
@@ -12,6 +12,7 @@ var (
 	configPath = fmt.Sprintf("%s/.projects-settings.json", os.Getenv("HOME"))
 )
 
+//Settings save configuration
 type Settings struct {
 	ProjectLocation string `json:"project.location,omitempty"`
 }
@@ -23,10 +24,6 @@ type Project struct {
 }
 
 //File represet all projects managed by
-//TODO adicionar map com id=index
-//TODO adicionar id, pode ser o nome se único
-//TODO validar path ao salvar, edit e add
-//TODO flags para add -c current
 type File struct {
 	Path     string
 	Projects []Project
@@ -56,17 +53,15 @@ func (f *File) Get(name string) (*Project, int) {
 }
 
 //Save save the current projects on conf file
-func (f *File) Save(s Settings) error {
-	file, err := os.Create(s.ProjectLocation)
+func Save(s Settings, f *File) error {
+	b, err := json.MarshalIndent(f.Projects, " ", "  ")
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	sort.Sort(f)
-
-	enc := json.NewEncoder(file)
-	//enc.SetIndent("", "  ") Only go 1.7
-	return enc.Encode(f.Projects)
+	if err = ioutil.WriteFile(f.Path, b, 0644); err != nil {
+		return err
+	}
+	return nil
 }
 
 //Load retrieve projects from config file

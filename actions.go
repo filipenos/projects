@@ -1,13 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"text/template"
 
 	"github.com/urfave/cli"
+)
+
+var (
+	ErrNameRequired = errorf("name is required")
 )
 
 func create(c *cli.Context) error {
@@ -37,15 +40,15 @@ func create(c *cli.Context) error {
 	}
 
 	if p.Name == "" {
-		return fmt.Errorf("name is required")
+		return ErrNameRequired
 	}
 
 	if c.Bool("validate-path") {
 		if p.Path == "" {
-			return fmt.Errorf("path is required")
+			return errorf("path is required")
 		}
 		if !isExist(p.Path) {
-			return fmt.Errorf("path is no exists")
+			return errorf("path is no exists")
 		}
 	}
 
@@ -56,11 +59,11 @@ func create(c *cli.Context) error {
 	}
 
 	if p, _ := projects.Get(p.Name); p != nil {
-		return fmt.Errorf("project '%s' already add to projects", p.Name)
+		return errorf("project '%s' already add to projects", p.Name)
 	}
 
 	projects.AddProject(*p)
-	if err := projects.Save(s); err != nil {
+	if err := Save(s, projects); err != nil {
 		return err
 	}
 	log("Add project: '%s' path: '%s'", p.Name, p.Path)
@@ -70,7 +73,7 @@ func create(c *cli.Context) error {
 func delete(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
-		return fmt.Errorf("name is required")
+		return ErrNameRequired
 	}
 
 	s := LoadSettings()
@@ -90,12 +93,12 @@ func delete(c *cli.Context) error {
 	}
 
 	if !excluded {
-		return fmt.Errorf("Project '%s' not found", name)
+		return errorf("Project '%s' not found", name)
 	}
 
 	log("Project '%s' removed successfully!", name)
 	projects.Projects = aux
-	return projects.Save(s)
+	return Save(s, projects)
 }
 
 func list(c *cli.Context) error {
@@ -117,7 +120,7 @@ func list(c *cli.Context) error {
 func open(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
-		return fmt.Errorf("name is required")
+		return ErrNameRequired
 	}
 
 	s := LoadSettings()
@@ -135,10 +138,14 @@ func open(c *cli.Context) error {
 	}
 
 	if path == "" {
-		return fmt.Errorf("Project '%s' not found", name)
+		return errorf("Project '%s' not found", name)
 	}
 
 	log("open path '%s'", path)
+
+	if isRunning := os.Getenv("TMUX"); isRunning != "" {
+		return errorf("can not open tmux inside another running: %s", isRunning)
+	}
 
 	cmd := exec.Command("tmux", "new", "-s", name, "-n", name, "-c", path)
 	//option -d run tmux with daemon
@@ -164,7 +171,7 @@ func open(c *cli.Context) error {
 func edit(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
-		return errorf("name is required")
+		return ErrNameRequired
 	}
 
 	s := LoadSettings()
@@ -178,15 +185,13 @@ func edit(c *cli.Context) error {
 		return errorf("project '%s' not found", name)
 	}
 	if p.Path == "" {
-		return fmt.Errorf("project '%s' dont have path", p.Name)
+		return errorf("project '%s' dont have path", p.Name)
 	}
 	if !isExist(p.Path) {
-		return fmt.Errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
+		return errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
 	}
 
 	cmd := exec.Command("code", p.Path)
-	//cmd := exec.Command("gvim", fmt.Sprintf(`+"cd %s"`, p.Path))
-	log("%s", cmd.Args)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return err
@@ -199,7 +204,7 @@ func edit(c *cli.Context) error {
 func update(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
-		return fmt.Errorf("name is required")
+		return ErrNameRequired
 	}
 
 	s := LoadSettings()
@@ -210,11 +215,11 @@ func update(c *cli.Context) error {
 
 	_, index := projects.Get(name)
 	if index == -1 {
-		return fmt.Errorf("project '%s' not found", name)
+		return errorf("project '%s' not found", name)
 	}
 	p := &projects.Projects[index]
 	if p == nil {
-		return fmt.Errorf("project '%s' not found", name)
+		return errorf("project '%s' not found", name)
 	}
 
 	edited, err := editProject(p)
@@ -222,19 +227,19 @@ func update(c *cli.Context) error {
 		return err
 	}
 	if edited.Name == "" {
-		return fmt.Errorf("name is required")
+		return ErrNameRequired
 	}
 	if c.Bool("validate-path") {
 		if edited.Path == "" {
-			return fmt.Errorf("path is required")
+			return errorf("path is required")
 		}
 		if !isExist(edited.Path) {
-			return fmt.Errorf("path is no exists")
+			return errorf("path is no exists")
 		}
 	}
 
 	projects.Projects[index] = *edited
-	return projects.Save(s)
+	return Save(s, projects)
 }
 
 func editProject(p *Project) (*Project, error) {
