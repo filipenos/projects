@@ -2,10 +2,19 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"sort"
 	"strings"
 )
+
+var (
+	configPath = fmt.Sprintf("%s/.projects-settings.json", os.Getenv("HOME"))
+)
+
+type Settings struct {
+	ProjectLocation string `json:"project.location,omitempty"`
+}
 
 //Project represent then project
 type Project struct {
@@ -49,8 +58,8 @@ func (f *File) Get(name string) (*Project, int) {
 }
 
 //Save save the current projects on conf file
-func (f *File) Save() error {
-	file, err := os.Create(f.Path)
+func (f *File) Save(s Settings) error {
+	file, err := os.Create(s.ProjectLocation)
 	if err != nil {
 		return err
 	}
@@ -63,8 +72,8 @@ func (f *File) Save() error {
 }
 
 //Load retrieve projects from config file
-func Load(path string) (*File, error) {
-	f := &File{Path: path}
+func Load(s Settings) (*File, error) {
+	f := &File{Path: s.ProjectLocation}
 
 	file, err := os.Open(f.Path)
 	if err != nil {
@@ -79,4 +88,20 @@ func Load(path string) (*File, error) {
 		return nil, err
 	}
 	return f, nil
+}
+
+func LoadSettings() Settings {
+	settings := Settings{
+		ProjectLocation: fmt.Sprintf("%s/.projects.json", os.Getenv("HOME")),
+	}
+	file, err := os.Open(configPath)
+	if err != nil {
+		return settings
+	}
+	defer file.Close()
+
+	if err := json.NewDecoder(file).Decode(&settings); err != nil {
+		return settings
+	}
+	return settings
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,11 +8,6 @@ import (
 	"text/template"
 
 	"github.com/urfave/cli"
-)
-
-var (
-	filepath      = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME")) // TODO extension Project Manager of vscode save the file in ~/.config/Code/User
-	ErrUnmodified = errors.New("Unmodified")
 )
 
 func create(c *cli.Context) error {
@@ -56,7 +50,8 @@ func create(c *cli.Context) error {
 		}
 	}
 
-	projects, err := Load(filepath)
+	s := LoadSettings()
+	projects, err := Load(s)
 	if err != nil {
 		return err
 	}
@@ -66,7 +61,7 @@ func create(c *cli.Context) error {
 	}
 
 	projects.AddProject(*p)
-	if err := projects.Save(); err != nil {
+	if err := projects.Save(s); err != nil {
 		return err
 	}
 	log("Add project: '%s' path: '%s'", p.Name, p.Path)
@@ -79,7 +74,8 @@ func delete(c *cli.Context) error {
 		return fmt.Errorf("name is required")
 	}
 
-	projects, err := Load(filepath)
+	s := LoadSettings()
+	projects, err := Load(s)
 	if err != nil {
 		return err
 	}
@@ -100,11 +96,12 @@ func delete(c *cli.Context) error {
 
 	log("Project '%s' removed successfully!", name)
 	projects.Projects = aux
-	return projects.Save()
+	return projects.Save(s)
 }
 
 func list(c *cli.Context) error {
-	projects, err := Load(filepath)
+	s := LoadSettings()
+	projects, err := Load(s)
 	if err != nil {
 		return err
 	}
@@ -125,7 +122,8 @@ func open(c *cli.Context) error {
 		return fmt.Errorf("name is required")
 	}
 
-	projects, err := Load(filepath)
+	s := LoadSettings()
+	projects, err := Load(s)
 	if err != nil {
 		return err
 	}
@@ -171,7 +169,8 @@ func edit(c *cli.Context) error {
 		return errorf("name is required")
 	}
 
-	projects, err := Load(filepath)
+	s := LoadSettings()
+	projects, err := Load(s)
 	if err != nil {
 		return err
 	}
@@ -205,7 +204,8 @@ func update(c *cli.Context) error {
 		return fmt.Errorf("name is required")
 	}
 
-	projects, err := Load(filepath)
+	s := LoadSettings()
+	projects, err := Load(s)
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func update(c *cli.Context) error {
 	}
 
 	projects.Projects[index] = *edited
-	return projects.Save()
+	return projects.Save(s)
 }
 
 func editProject(p *Project) (*Project, error) {
@@ -297,7 +297,8 @@ func getProject(c *cli.Context) error {
 		return fmt.Errorf("name is required")
 	}
 
-	projects, err := Load(filepath)
+	s := LoadSettings()
+	projects, err := Load(s)
 	if err != nil {
 		return err
 	}
