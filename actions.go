@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -117,6 +118,30 @@ func list(c *cli.Context) error {
 	return tmpl.Execute(os.Stdout, ctx)
 }
 
+func getSessions() (map[string]bool, error) {
+	m := make(map[string]bool, 0)
+
+	cmd := exec.Command("tmux", "list-sessions")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return m, err
+	}
+	for _, l := range strings.Split(string(out), "\n") {
+		l = strings.TrimSpace(l)
+		if len(l) == 0 {
+			continue
+		}
+		p := strings.Split(l, ":")
+		if len(p) == 0 {
+			log("%v", p)
+			continue
+		}
+		m[p[0]] = strings.Contains(strings.Join(p[1:], ""), "attached")
+	}
+
+	return m, nil
+}
+
 func open(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
@@ -147,25 +172,41 @@ func open(c *cli.Context) error {
 		return errorf("can not open tmux inside another running: %s", isRunning)
 	}
 
-	cmd := exec.Command("tmux", "new", "-s", name, "-n", name, "-c", path)
-	//option -d run tmux with daemon
-	// tmux new-session -d -s mySession -n myWindow
-	// tmux send-keys -t mySession:myWindow "cd /my/directory" Enter
-	// tmux send-keys -t mySession:myWindow "vim" Enter
-	// tmux attach -t mySession:myWindow
-	cmd.Stdin = os.Stdin
+	var hasSession bool
+	cmd := exec.Command("tmux", "has-session", "-t", name)
 	out, err := cmd.CombinedOutput()
-	if strings.Contains(string(out), "duplicate session") {
-		cmd = exec.Command("tmux", "attach", "-t", name)
-		cmd.Stdin = os.Stdin
-		_, err := cmd.CombinedOutput()
+	logDebug(c.Bool("debug"), "has-session return: %v", string(out))
+	if err == nil {
+		hasSession = true
+	}
+
+	if !hasSession {
+		cmd := exec.Command("tmux", "new", "-s", name, "-n", name, "-c", path, "-d")
+		//option -d run tmux with daemon
+		// tmux new-session -d -s mySession -n myWindow
+		// tmux send-keys -t mySession:myWindow "cd /my/directory" Enter
+		// tmux send-keys -t mySession:myWindow "vim" Enter
+		// tmux attach -t mySession:myWindow
+		out, err = cmd.CombinedOutput()
+		logDebug(c.Bool("debug"), "new-session return: %v", string(out))
 		if err != nil {
 			return err
 		}
-	} else {
-		return err
+		if c.Bool("vim") {
+			//args  = append(args, []string{"\\;", "new-window", "-n", "vim"}...)
+			cmd := exec.Command("tmux", "new-window", "-n", "vim", "vim")
+			out, err := cmd.CombinedOutput()
+			logDebug(c.Bool("debug"), "new-window return: %v", string(out))
+			if err != nil {
+				return err
+			}
+		}
 	}
-	return nil
+	cmd = exec.Command("tmux", "attach", "-t", name)
+	cmd.Stdin = os.Stdin
+	out, err = cmd.CombinedOutput()
+	logDebug(c.Bool("debug"), "attch return: %v", string(out))
+	return err
 }
 
 func edit(c *cli.Context) error {
@@ -285,4 +326,52 @@ func parseContent(data []byte) *Project {
 		}
 	}
 	return p
+}
+
+func path(c *cli.Context) error {
+	name := strings.TrimSpace(c.Args().First())
+	if name == "" {
+		return ErrNameRequired
+	}
+
+	s := LoadSettings()
+	projects, err := Load(s)
+	if err != nil {
+		return err
+	}
+
+	p, _ := projects.Get(name)
+	if p == nil {
+		return errorf("project '%s' not found", name)
+	}
+	if p.Path == "" {
+		return errorf("project '%s' dont have path", p.Name)
+	}
+	if !isExist(p.Path) {
+		return errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
+	}
+
+	fmt.Println(p.Path)
+
+	return nil
+}
+
+func vimCommand(c *cli.Context) error {
+	s := LoadSettings()
+	projects, err := Load(s)
+	if err != nil {
+		return err
+	}
+
+	for _, p := range projects.Projects {
+		title := strings.ToUpper(p.Name[:1]) + p.Name[1:]
+		title = strings.Replace(title, "-", "", -1)
+		fmt.Printf(`
+function! %s()
+  cd %s
+endfunction
+command! %s call %s()`, title, p.Path, title, title)
+	}
+
+	return nil
 }

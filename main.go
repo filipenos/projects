@@ -8,6 +8,10 @@ import (
 
 func main() {
 	app := cli.NewApp()
+	app.EnableBashCompletion = true
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{Name: "debug", Usage: "debug commands"},
+	}
 	app.Commands = []cli.Command{
 		{
 			Name:    "create",
@@ -53,8 +57,11 @@ func main() {
 			Action:    list,
 		},
 		{
-			Name:      "open",
-			Aliases:   []string{"o"},
+			Name:    "open",
+			Aliases: []string{"o"},
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "vim", Usage: "open tmux with vim opened"},
+			},
 			Usage:     "open project using tmux",
 			UsageText: "project open <name>",
 			ArgsUsage: "name",
@@ -67,6 +74,20 @@ func main() {
 			UsageText: "project edit <name>",
 			ArgsUsage: "name",
 			Action:    edit,
+		},
+		{
+			Name:      "vim-command",
+			Usage:     "show vim commands",
+			UsageText: "project vim-command",
+			Action:    vimCommand,
+		},
+		{
+			Name:      "path",
+			Aliases:   []string{"pt"},
+			Usage:     "show path of project",
+			UsageText: "project path <name>",
+			ArgsUsage: "name",
+			Action:    path,
 		},
 	}
 	app.Name = "Projects"
