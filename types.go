@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -21,6 +22,9 @@ type Settings struct {
 type Project struct {
 	Name string `json:"name,omitempty"`
 	Path string `json:"rootPath,omitempty"`
+
+	Opened   bool `json:"-"`
+	Attached bool `json:"-"`
 }
 
 //File represet all projects managed by
@@ -80,7 +84,44 @@ func Load(s Settings) (*File, error) {
 	if err := json.NewDecoder(file).Decode(&f.Projects); err != nil {
 		return nil, err
 	}
+
+	sessions, err := getSessions()
+	if err != nil {
+		return nil, err
+	}
+	for i, p := range f.Projects {
+		attached, ok := sessions[p.Name]
+		if ok {
+			f.Projects[i].Opened = true
+			f.Projects[i].Attached = attached
+		}
+	}
+
 	return f, nil
+}
+
+func getSessions() (map[string]bool, error) {
+	m := make(map[string]bool, 0)
+
+	cmd := exec.Command("tmux", "list-sessions")
+	out, err := cmd.CombinedOutput()
+	if err != nil && !strings.Contains(string(out), "no server running") {
+		return m, err
+	}
+	for _, l := range strings.Split(string(out), "\n") {
+		l = strings.TrimSpace(l)
+		if len(l) == 0 {
+			continue
+		}
+		p := strings.Split(l, ":")
+		if len(p) == 0 {
+			log("%v", p)
+			continue
+		}
+		m[p[0]] = strings.Contains(strings.Join(p[1:], ""), "attached")
+	}
+
+	return m, nil
 }
 
 func LoadSettings() Settings {

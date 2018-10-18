@@ -109,37 +109,16 @@ func list(c *cli.Context) error {
 		return err
 	}
 
-	t := `{{range .Projects.Projects}}Name: {{.Name}}{{if $.Full}}
+	t := `{{range .Projects.Projects}}{{.Name}}{{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if $.Full}}
   Path: {{.Path}}{{end}}
 {{else}}No projects yeat!
 {{end}}`
 	tmpl := template.Must(template.New("editor").Parse(t))
-	ctx := map[string]interface{}{"Projects": projects, "Full": c.Bool("full")}
+	ctx := map[string]interface{}{
+		"Projects": projects,
+		"Full":     c.Bool("full"),
+	}
 	return tmpl.Execute(os.Stdout, ctx)
-}
-
-func getSessions() (map[string]bool, error) {
-	m := make(map[string]bool, 0)
-
-	cmd := exec.Command("tmux", "list-sessions")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return m, err
-	}
-	for _, l := range strings.Split(string(out), "\n") {
-		l = strings.TrimSpace(l)
-		if len(l) == 0 {
-			continue
-		}
-		p := strings.Split(l, ":")
-		if len(p) == 0 {
-			log("%v", p)
-			continue
-		}
-		m[p[0]] = strings.Contains(strings.Join(p[1:], ""), "attached")
-	}
-
-	return m, nil
 }
 
 func open(c *cli.Context) error {
