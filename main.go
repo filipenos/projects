@@ -76,10 +76,14 @@ func main() {
 			Action:    edit,
 		},
 		{
-			Name:      "vim-command",
-			Usage:     "show vim commands",
-			UsageText: "project vim-command",
-			Action:    vimCommand,
+			Name: "export",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "f, format", Usage: "export projects to (nerdtree|vimcommand)"},
+				cli.BoolFlag{Name: "override", Usage: "Override default configuration file"},
+			},
+			Usage:     "export projects to use in another locations",
+			UsageText: "project -f <format>",
+			Action:    export,
 		},
 		{
 			Name:      "path",

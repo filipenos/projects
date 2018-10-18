@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -335,21 +338,48 @@ func path(c *cli.Context) error {
 	return nil
 }
 
-func vimCommand(c *cli.Context) error {
+func export(c *cli.Context) error {
 	s := LoadSettings()
 	projects, err := Load(s)
 	if err != nil {
 		return err
 	}
 
+	format := strings.TrimSpace(c.String("format"))
+	if len(format) == 0 {
+		return fmt.Errorf("Expected format (nerdtree|vimcommand)")
+	}
+
+	out := bytes.NewBufferString("")
+	sort.Sort(projects)
 	for _, p := range projects.Projects {
-		title := strings.ToUpper(p.Name[:1]) + p.Name[1:]
-		title = strings.Replace(title, "-", "", -1)
-		fmt.Printf(`
+		switch format {
+		case "vimcommand":
+			title := strings.ToUpper(p.Name[:1]) + p.Name[1:]
+			title = strings.Replace(title, "-", "", -1)
+			fmt.Fprintf(out, `
 function! %s()
   cd %s
 endfunction
 command! %s call %s()`, title, p.Path, title, title)
+		case "nerdtree":
+			fmt.Fprintf(out, `%s %s
+`, p.Name, p.Path)
+		}
+	}
+
+	if c.Bool("override") {
+		filename := os.Getenv("HOME")
+		if format == "nerdtree" {
+			filename += "/.NERDTreeBookmarks"
+		} else {
+			filename += "/.vimrc.projects"
+		}
+		if err = ioutil.WriteFile(filename, out.Bytes(), 0666); err != nil {
+			return err
+		}
+	} else {
+		os.Stdout.Write(out.Bytes())
 	}
 
 	return nil
