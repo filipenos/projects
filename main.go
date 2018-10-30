@@ -60,12 +60,17 @@ func main() {
 			Name:    "open",
 			Aliases: []string{"o"},
 			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "d, duplicate", Usage: "duplicate running session"},
 				cli.BoolFlag{Name: "vim", Usage: "open tmux with vim opened"},
 			},
 			Usage:     "open project using tmux",
 			UsageText: "project open <name>",
 			ArgsUsage: "name",
 			Action:    open,
+		},
+		{
+			Name:   "close",
+			Action: close,
 		},
 		{
 			Name:      "edit",

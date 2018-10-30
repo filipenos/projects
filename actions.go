@@ -109,7 +109,7 @@ func list(c *cli.Context) error {
 	s := LoadSettings()
 	projects, err := Load(s)
 	if err != nil {
-		return err
+		return errorf("error on load file: %v", err)
 	}
 
 	t := `{{range .Projects.Projects}}{{.Name}}{{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if $.Full}}
@@ -121,7 +121,11 @@ func list(c *cli.Context) error {
 		"Projects": projects,
 		"Full":     c.Bool("full"),
 	}
-	return tmpl.Execute(os.Stdout, ctx)
+	err = tmpl.Execute(os.Stdout, ctx)
+	if err != nil {
+		return errorf("error on execute template: %v", err)
+	}
+	return nil
 }
 
 func open(c *cli.Context) error {
@@ -152,6 +156,23 @@ func open(c *cli.Context) error {
 
 	if isRunning := os.Getenv("TMUX"); isRunning != "" {
 		return errorf("can not open tmux inside another running: %s", isRunning)
+		//TODO: não funcionou
+		/*		cmd := exec.Command("tmux", "display-message", "-p", "#S")
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					return errorf("error on get attach session name: %v", err)
+				}
+				currentAttached := strings.TrimSpace(string(out))
+				log("detach running session %s", currentAttached)
+				if currentAttached != "" {
+					cmd = exec.Command("tmux", "detach-client", "-s", currentAttached)
+					if err := cmd.Run(); err != nil {
+						return errorf("error on detach-client: %v", err)
+					}
+				}
+				if err := os.Setenv("TMUX", ""); err != nil {
+					return errorf("error on clean tmux env: %v", err)
+				}*/
 	}
 
 	var hasSession bool
@@ -172,7 +193,7 @@ func open(c *cli.Context) error {
 		out, err = cmd.CombinedOutput()
 		logDebug(c.Bool("debug"), "new-session return: %v", string(out))
 		if err != nil {
-			return err
+			return errorf("error on new-session: %v", err)
 		}
 		if c.Bool("vim") {
 			//args  = append(args, []string{"\\;", "new-window", "-n", "vim"}...)
@@ -180,15 +201,42 @@ func open(c *cli.Context) error {
 			out, err := cmd.CombinedOutput()
 			logDebug(c.Bool("debug"), "new-window return: %v", string(out))
 			if err != nil {
-				return err
+				return errorf("error on new-window: %v", err)
 			}
 		}
 	}
-	cmd = exec.Command("tmux", "attach", "-t", name)
+
+	//TODO opcao -d sempre desacopla as sessoes rodando, aceitar como parametro
+	args := []string{"attach"}
+	if !c.Bool("d") {
+		args = append(args, "-d")
+	}
+	args = append(args, []string{"-t", name}...)
+	cmd = exec.Command("tmux", args...)
 	cmd.Stdin = os.Stdin
 	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return errorf("error on attach: %v", err)
+	}
 	logDebug(c.Bool("debug"), "attch return: %v", string(out))
-	return err
+	return nil
+}
+
+func close(c *cli.Context) error {
+	cmd := exec.Command("tmux", "display-message", "-p", "#S")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return errorf("error on get attach session name: %v", err)
+	}
+	currentAttached := strings.TrimSpace(string(out))
+	log("close running session %s", currentAttached)
+	if currentAttached != "" {
+		cmd = exec.Command("tmux", "detach-client", "-s", currentAttached)
+		if err := cmd.Run(); err != nil {
+			return errorf("error on detach-client: %v", err)
+		}
+	}
+	return nil
 }
 
 func edit(c *cli.Context) error {
