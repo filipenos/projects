@@ -32,10 +32,7 @@ func errorf(msg string, args ...interface{}) error {
 func tmux(args ...string) (string, error) {
 	cmd := exec.Command("tmux", args...)
 	out, err := cmd.CombinedOutput()
-	return "", err
-	if err != nil {
-	}
-	return strings.TrimSpace(string(out)), nil
+	return strings.TrimSpace(string(out)), err
 }
 
 func startServer() error {
