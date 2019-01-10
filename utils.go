@@ -69,3 +69,10 @@ func getSessions() (map[string]bool, error) {
 
 	return m, nil
 }
+
+//pwd return the current path name and location
+func current_pwd() (string, string) {
+	pwd := os.Getenv("PWD")
+	paths := strings.Split(pwd, "/")
+	return strings.TrimSpace(paths[len(paths)-1]), strings.TrimSpace(pwd)
+}

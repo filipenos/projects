@@ -26,11 +26,7 @@ func create(c *cli.Context) error {
 	)
 
 	if c.Bool("current") {
-		pwd := os.Getenv("PWD")
-		paths := strings.Split(pwd, "/")
-
-		p.Name = strings.TrimSpace(paths[len(paths)-1])
-		p.Path = strings.TrimSpace(pwd)
+		p.Name, p.Path = current_pwd()
 	} else {
 		p.Name = strings.TrimSpace(c.Args().Get(0))
 		p.Path = strings.TrimSpace(c.Args().Get(1))
@@ -131,7 +127,7 @@ func list(c *cli.Context) error {
 func open(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
-		return ErrNameRequired
+		name, _ = current_pwd()
 	}
 
 	s := LoadSettings()
