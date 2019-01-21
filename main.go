@@ -6,7 +6,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-//TODO adicionar opção para ocultar o projeto
 func main() {
 	app := cli.NewApp()
 	app.EnableBashCompletion = true

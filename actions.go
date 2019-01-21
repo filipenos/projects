@@ -202,7 +202,6 @@ func open(c *cli.Context) error {
 		}
 	}
 
-	//TODO opcao -d sempre desacopla as sessoes rodando, aceitar como parametro
 	args := []string{"attach"}
 	if !c.Bool("d") {
 		args = append(args, "-d")

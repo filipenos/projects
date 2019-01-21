@@ -19,8 +19,9 @@ type Settings struct {
 
 //Project represent then project
 type Project struct {
-	Name string `json:"name,omitempty"`
-	Path string `json:"rootPath,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Path    string `json:"rootPath,omitempty"`
+	Enabled *bool  `json:"enabled,omitempty"`
 
 	Opened   bool `json:"-"`
 	Attached bool `json:"-"`
@@ -83,6 +84,14 @@ func Load(s Settings) (*File, error) {
 	if err := json.NewDecoder(file).Decode(&f.Projects); err != nil {
 		return nil, err
 	}
+
+	aux := make([]Project, 0, len(f.Projects))
+	for i := range f.Projects {
+		if f.Projects[i].Enabled == nil || *f.Projects[i].Enabled {
+			aux = append(aux, f.Projects[i])
+		}
+	}
+	f.Projects = aux
 
 	sessions, err := getSessions()
 	if err != nil {
