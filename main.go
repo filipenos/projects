@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+//TODO adicionar opção para ocultar o projeto
 func main() {
 	app := cli.NewApp()
 	app.EnableBashCompletion = true
@@ -58,7 +59,7 @@ func main() {
 		},
 		{
 			Name:    "open",
-			Aliases: []string{"o"},
+			Aliases: []string{"o", "attach"},
 			Flags: []cli.Flag{
 				cli.BoolFlag{Name: "d, duplicate", Usage: "duplicate running session"},
 				cli.BoolFlag{Name: "vim", Usage: "open tmux with vim opened"},
@@ -69,10 +70,19 @@ func main() {
 			Action:    open,
 		},
 		{
-			Name:   "close",
-			Action: close,
+			Name:    "close",
+			Aliases: []string{"x", "deattach"},
+			Flags: []cli.Flag{
+				cli.BoolFlag{Name: "a, all", Usage: "all opened projects"},
+				cli.BoolFlag{Name: "k, kill", Usage: "kill running project"},
+			},
+			Usage:     "close project",
+			UsageText: "close project <?name>",
+			ArgsUsage: "name",
+			Action:    close,
 		},
-		{
+		{ //TODO essa opção editar não ficou legal, o editar deveria editar o projeto como é feito no update
+			//TODO para abrir no vscode deveria ter alguma coisa diferente
 			Name:      "edit",
 			Aliases:   []string{"e"},
 			Usage:     "edit project using vscode",

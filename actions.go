@@ -219,15 +219,48 @@ func open(c *cli.Context) error {
 }
 
 func close(c *cli.Context) error {
-	cmd := exec.Command("tmux", "display-message", "-p", "#S")
-	out, err := cmd.CombinedOutput()
+	projects, err := Load(LoadSettings())
 	if err != nil {
-		return errorf("error on get attach session name: %v", err)
+		return errorf("error on load file: %v", err)
 	}
-	currentAttached := strings.TrimSpace(string(out))
-	log("close running session %s", currentAttached)
-	if currentAttached != "" {
-		cmd = exec.Command("tmux", "detach-client", "-s", currentAttached)
+
+	toClose := make([]string, 0, 0)
+
+	if c.Bool("all") {
+		for _, p := range projects.Projects {
+			if p.Opened {
+				toClose = append(toClose, p.Name)
+			}
+		}
+		if len(toClose) == 0 {
+			return errorf("no projects to close")
+		}
+	} else {
+		name := strings.TrimSpace(c.Args().First())
+		if name == "" && os.Getenv("TMUX") != "" {
+			cmd := exec.Command("tmux", "display-message", "-p", "#S")
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				return errorf("error on get attach session name: %v", err)
+			}
+			name = strings.TrimSpace(string(out))
+			log("close running session %s", name)
+			toClose = append(toClose, name)
+		}
+
+		if name == "" {
+			return errorf("name of project is required")
+		}
+	}
+
+	for _, name := range toClose {
+		args := []string{"detach-client", "-s", name}
+		if c.Bool("kill") {
+			log("kill opened project %s", name)
+			args = []string{"kill-session", "-t", name}
+		}
+
+		cmd := exec.Command("tmux", args...)
 		if err := cmd.Run(); err != nil {
 			return errorf("error on detach-client: %v", err)
 		}
