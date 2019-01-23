@@ -6,6 +6,11 @@ import (
 	"github.com/urfave/cli"
 )
 
+//TODO pensar em como lidar com projetos desabilitados.
+//ele não é listado, mas é necessário um lugar para remover, ou habilitar novamente
+//o que está acontecendo agora, é que se o parametro existir no json ele é utilizado
+//talvez permitir de editar o arquivo json já seria suficiente.
+//pra isso a opção edit talvez
 func main() {
 	app := cli.NewApp()
 	app.EnableBashCompletion = true
@@ -62,6 +67,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.BoolFlag{Name: "d, duplicate", Usage: "duplicate running session"},
 				cli.BoolFlag{Name: "vim", Usage: "open tmux with vim opened"},
+				cli.BoolFlag{Name: "code", Usage: "open project with vscode"},
 			},
 			Usage:     "open project using tmux",
 			UsageText: "project open <name>",
@@ -79,15 +85,6 @@ func main() {
 			UsageText: "close project <?name>",
 			ArgsUsage: "name",
 			Action:    close,
-		},
-		{ //TODO essa opção editar não ficou legal, o editar deveria editar o projeto como é feito no update
-			//TODO para abrir no vscode deveria ter alguma coisa diferente
-			Name:      "edit",
-			Aliases:   []string{"e"},
-			Usage:     "edit project using vscode",
-			UsageText: "project edit <name>",
-			ArgsUsage: "name",
-			Action:    edit,
 		},
 		{
 			Name: "export",

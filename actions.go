@@ -15,6 +15,8 @@ import (
 
 var (
 	ErrNameRequired = errorf("name is required")
+	ErrPathRequired = errorf("path is required")
+	ErrPathNoExist  = errorf("path is no exists")
 )
 
 func create(c *cli.Context) error {
@@ -45,10 +47,10 @@ func create(c *cli.Context) error {
 
 	if c.Bool("validate-path") {
 		if p.Path == "" {
-			return errorf("path is required")
+			return ErrPathRequired
 		}
 		if !isExist(p.Path) {
-			return errorf("path is no exists")
+			return ErrPathNoExist
 		}
 	}
 
@@ -102,8 +104,7 @@ func delete(c *cli.Context) error {
 }
 
 func list(c *cli.Context) error {
-	s := LoadSettings()
-	projects, err := Load(s)
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return errorf("error on load file: %v", err)
 	}
@@ -130,25 +131,29 @@ func open(c *cli.Context) error {
 		name, _ = current_pwd()
 	}
 
-	s := LoadSettings()
-	projects, err := Load(s)
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
 
-	var path string
-	for _, p := range projects.Projects {
-		if p.Name == name {
-			path = p.Path
-			break
-		}
+	p, _ := projects.Get(name)
+	if p == nil {
+		return errorf("project '%s' not found", name)
+	}
+	if p.Path == "" {
+		return errorf("project '%s' dont have path", p.Name)
+	}
+	if !isExist(p.Path) {
+		return errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
 	}
 
-	if path == "" {
-		return errorf("Project '%s' not found", name)
+	if c.Bool("code") {
+		cmd := exec.Command("code", p.Path)
+		cmd.Stdin = os.Stdin
+		return cmd.Run()
 	}
 
-	log("open path '%s'", path)
+	log("open path '%s'", p.Path)
 
 	if isRunning := os.Getenv("TMUX"); isRunning != "" {
 		return errorf("can not open tmux inside another running: %s", isRunning)
@@ -180,7 +185,7 @@ func open(c *cli.Context) error {
 	}
 
 	if !hasSession {
-		cmd := exec.Command("tmux", "new", "-s", name, "-n", name, "-c", path, "-d")
+		cmd := exec.Command("tmux", "new", "-s", name, "-n", name, "-c", p.Path, "-d")
 		//option -d run tmux with daemon
 		// tmux new-session -d -s mySession -n myWindow
 		// tmux send-keys -t mySession:myWindow "cd /my/directory" Enter
@@ -267,37 +272,6 @@ func close(c *cli.Context) error {
 	return nil
 }
 
-func edit(c *cli.Context) error {
-	name := strings.TrimSpace(c.Args().First())
-	if name == "" {
-		return ErrNameRequired
-	}
-
-	s := LoadSettings()
-	projects, err := Load(s)
-	if err != nil {
-		return err
-	}
-
-	p, _ := projects.Get(name)
-	if p == nil {
-		return errorf("project '%s' not found", name)
-	}
-	if p.Path == "" {
-		return errorf("project '%s' dont have path", p.Name)
-	}
-	if !isExist(p.Path) {
-		return errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
-	}
-
-	log("opening %s to edit", p.Name)
-
-	cmd := exec.Command("code", p.Path)
-	// cmd := exec.Command("vim", "--cmd", fmt.Sprintf(`"cd %s"`, p.Path))
-	cmd.Stdin = os.Stdin
-	return cmd.Run()
-}
-
 func update(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
@@ -328,10 +302,10 @@ func update(c *cli.Context) error {
 	}
 	if c.Bool("validate-path") {
 		if edited.Path == "" {
-			return errorf("path is required")
+			return ErrPathRequired
 		}
 		if !isExist(edited.Path) {
-			return errorf("path is no exists")
+			return ErrPathNoExist
 		}
 	}
 
@@ -392,8 +366,7 @@ func path(c *cli.Context) error {
 		return ErrNameRequired
 	}
 
-	s := LoadSettings()
-	projects, err := Load(s)
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
@@ -415,8 +388,7 @@ func path(c *cli.Context) error {
 }
 
 func export(c *cli.Context) error {
-	s := LoadSettings()
-	projects, err := Load(s)
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
