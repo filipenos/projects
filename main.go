@@ -22,9 +22,8 @@ func main() {
 			Name:    "create",
 			Aliases: []string{"c", "add"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "c, current", Usage: "use current path to add"},
 				cli.BoolFlag{Name: "e, editor", Usage: "use default editor to add"},
-				cli.BoolFlag{Name: "v, validate-path", Usage: "this option allow to validate if path exists"},
+				cli.BoolFlag{Name: "n, no-validate", Usage: "this option ignore path validation"},
 			},
 			Usage:     "create new project",
 			UsageText: "project create <name> <path>",
@@ -35,7 +34,7 @@ func main() {
 			Name:    "update",
 			Aliases: []string{"u"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "v, validate-path", Usage: "this option allow to validate if path exists"},
+				cli.BoolFlag{Name: "n, no-validate", Usage: "this option ignore path validation"},
 			},
 			Usage:     "update project",
 			UsageText: "project update <name>",

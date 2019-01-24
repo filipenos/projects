@@ -27,11 +27,17 @@ func create(c *cli.Context) error {
 		err error
 	)
 
-	if c.Bool("current") {
+	switch len(c.Args()) {
+	case 0:
 		p.Name, p.Path = current_pwd()
-	} else {
+	case 1:
+		p.Name = strings.TrimSpace(c.Args().Get(0))
+		_, p.Path = current_pwd()
+	case 2:
 		p.Name = strings.TrimSpace(c.Args().Get(0))
 		p.Path = strings.TrimSpace(c.Args().Get(1))
+	default:
+		return errorf("invalid size of arguments")
 	}
 
 	if c.Bool("editor") {
@@ -45,7 +51,7 @@ func create(c *cli.Context) error {
 		return ErrNameRequired
 	}
 
-	if c.Bool("validate-path") {
+	if !c.Bool("no-validate") {
 		if p.Path == "" {
 			return ErrPathRequired
 		}
@@ -300,7 +306,7 @@ func update(c *cli.Context) error {
 	if edited.Name == "" {
 		return ErrNameRequired
 	}
-	if c.Bool("validate-path") {
+	if !c.Bool("no-validate") {
 		if edited.Path == "" {
 			return ErrPathRequired
 		}
