@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	configPath = fmt.Sprintf("%s/.projects-settings.json", os.Getenv("HOME"))
+	configPath      = fmt.Sprintf("%s/.projects-settings.json", os.Getenv("HOME"))
+	defaultSettings = Settings{ProjectLocation: fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))}
 )
 
 //Settings save configuration
@@ -109,17 +110,22 @@ func Load(s Settings) (*File, error) {
 }
 
 func LoadSettings() Settings {
-	settings := Settings{
-		ProjectLocation: fmt.Sprintf("%s/.projects.json", os.Getenv("HOME")),
-	}
 	file, err := os.Open(configPath)
-	if err != nil {
-		return settings
-	}
 	defer file.Close()
-
-	if err := json.NewDecoder(file).Decode(&settings); err != nil {
+	if os.IsNotExist(err) {
+		file, err = os.Create(configPath)
+		if err != nil {
+			return defaultSettings
+		}
+		if err = json.NewEncoder(file).Encode(defaultSettings); err != nil {
+			return defaultSettings
+		}
+		return defaultSettings
+	} else {
+		var settings Settings
+		if err := json.NewDecoder(file).Decode(&settings); err != nil {
+			return defaultSettings
+		}
 		return settings
 	}
-	return settings
 }
