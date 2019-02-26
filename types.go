@@ -24,8 +24,9 @@ type Project struct {
 	Path    string `json:"rootPath,omitempty"`
 	Enabled *bool  `json:"enabled,omitempty"`
 
-	Opened   bool `json:"-"`
-	Attached bool `json:"-"`
+	Opened    bool `json:"-"`
+	Attached  bool `json:"-"`
+	ValidPath bool `json:"-"`
 }
 
 //File represet all projects managed by
@@ -104,6 +105,7 @@ func Load(s Settings) (*File, error) {
 			f.Projects[i].Opened = true
 			f.Projects[i].Attached = attached
 		}
+		f.Projects[i].ValidPath = isExist(p.Path)
 	}
 
 	return f, nil
