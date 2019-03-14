@@ -70,8 +70,8 @@ func create(c *cli.Context) error {
 		return errorf("project '%s' already add to projects", p.Name)
 	}
 
-	projects.AddProject(*p)
-	if err := Save(s, projects); err != nil {
+	projects.Add(*p)
+	if err := projects.Save(s); err != nil {
 		return err
 	}
 	log("Add project: '%s' path: '%s'", p.Name, p.Path)
@@ -91,12 +91,12 @@ func delete(c *cli.Context) error {
 	}
 
 	excluded := false
-	aux := make([]Project, 0, len(projects.Projects))
-	for i := range projects.Projects {
-		if projects.Projects[i].Name == name && !excluded {
+	aux := make([]Project, 0, len(projects))
+	for i := range projects {
+		if projects[i].Name == name && !excluded {
 			excluded = true
 		} else {
-			aux = append(aux, projects.Projects[i])
+			aux = append(aux, projects[i])
 		}
 	}
 
@@ -105,8 +105,8 @@ func delete(c *cli.Context) error {
 	}
 
 	log("Project '%s' removed successfully!", name)
-	projects.Projects = aux
-	return Save(s, projects)
+	projects = aux
+	return projects.Save(s)
 }
 
 func list(c *cli.Context) error {
@@ -115,7 +115,7 @@ func list(c *cli.Context) error {
 		return errorf("error on load file: %v", err)
 	}
 
-	t := `{{range .Projects.Projects}}{{.Name}}{{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if $.Full}}
+	t := `{{range .Projects}}{{.Name}}{{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if $.Full}}
   Path: {{.Path}}{{end}}
 {{else}}No projects yeat!
 {{end}}`
@@ -245,7 +245,7 @@ func close(c *cli.Context) error {
 	toClose := make([]string, 0, 0)
 
 	if c.Bool("all") {
-		for _, p := range projects.Projects {
+		for _, p := range projects {
 			if p.Opened {
 				toClose = append(toClose, p.Name)
 			}
@@ -302,7 +302,7 @@ func update(c *cli.Context) error {
 	if index == -1 {
 		return errorf("project '%s' not found", name)
 	}
-	p := &projects.Projects[index]
+	p := &projects[index]
 	if p == nil {
 		return errorf("project '%s' not found", name)
 	}
@@ -323,8 +323,8 @@ func update(c *cli.Context) error {
 		}
 	}
 
-	projects.Projects[index] = *edited
-	return Save(s, projects)
+	projects[index] = *edited
+	return projects.Save(s)
 }
 
 func editProject(p *Project) (*Project, error) {
@@ -414,7 +414,7 @@ func export(c *cli.Context) error {
 
 	out := bytes.NewBufferString("")
 	sort.Sort(projects)
-	for _, p := range projects.Projects {
+	for _, p := range projects {
 		switch format {
 		case "vimcommand":
 			title := strings.ToUpper(p.Name[:1]) + p.Name[1:]

@@ -18,105 +18,118 @@ type Settings struct {
 	ProjectLocation string `json:"project.location,omitempty"`
 }
 
+type File struct {
+	Groups   []Group   `json:"groups,omitempty"`
+	Projects []Project `json:"projects,omitempty"`
+}
+
+type Group struct {
+	Name     string    `json:"name,omitempty"`
+	Projects []Project `json:"projects,omitempty"`
+}
+
 //Project represent then project
 type Project struct {
-	Name    string `json:"name,omitempty"`
-	Path    string `json:"rootPath,omitempty"`
-	Enabled *bool  `json:"enabled,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Path        string `json:"path,omitempty"`
+	Description string `json:"description,omitempty"`
 
-	Opened   bool `json:"-"`
-	Attached bool `json:"-"`
+	Group    string `json:"-"`
+	Opened   bool   `json:"-"`
+	Attached bool   `json:"-"`
 }
 
-//File represet all projects managed by
-type File struct {
-	Path     string
-	Projects []Project
+type Projects []Project
+
+func (projects Projects) Len() int           { return len(projects) }
+func (projects Projects) Swap(i, j int)      { projects[i], projects[j] = projects[j], projects[i] }
+func (projects Projects) Less(i, j int) bool { return projects[i].Name < projects[j].Name }
+
+func (projects Projects) Add(p Project) {
+	projects = append(projects, p)
 }
 
-func (f File) Len() int           { return len(f.Projects) }
-func (f File) Swap(i, j int)      { f.Projects[i], f.Projects[j] = f.Projects[j], f.Projects[i] }
-func (f File) Less(i, j int) bool { return f.Projects[i].Name < f.Projects[j].Name }
-
-//Add new project to manage
-func (f *File) Add(name, path string) {
-	f.Projects = append(f.Projects, Project{Name: name, Path: path})
-}
-
-func (f *File) AddProject(p Project) {
-	f.Projects = append(f.Projects, p)
-}
-
-func (f *File) Get(name string) (*Project, int) {
+func (projects Projects) Get(name string) (*Project, int) {
 	name = strings.TrimSpace(name)
-	for i := range f.Projects {
-		if f.Projects[i].Name == name {
-			return &f.Projects[i], i
+	for i := range projects {
+		if projects[i].Name == name {
+			return &projects[i], i
 		}
 	}
 	return nil, -1
 }
 
-func (f *File) GetByPath(path string) (*Project, int) {
+func (projects Projects) GetByPath(path string) (*Project, int) {
 	path = strings.TrimSpace(path)
-	for i := range f.Projects {
-		if f.Projects[i].Path == path {
-			return &f.Projects[i], i
+	for i := range projects {
+		if projects[i].Path == path {
+			return &projects[i], i
 		}
 	}
 	return nil, -1
 }
 
 //Save save the current projects on conf file
-func Save(s Settings, f *File) error {
-	b, err := json.MarshalIndent(f.Projects, " ", "  ")
+func (projects Projects) Save(s Settings) error {
+	file := File{}
+	file.Projects = make([]Project, 0)
+	file.Groups = make([]Group, 0)
+	for i := range projects {
+		p := projects[i]
+		if p.Group == "" {
+			file.Projects = append(file.Projects, p)
+		} else {
+
+		}
+	}
+	b, err := json.MarshalIndent(file, " ", "  ")
 	if err != nil {
 		return err
 	}
-	if err = ioutil.WriteFile(f.Path, b, 0644); err != nil {
-		return err
-	}
-	return nil
+	return ioutil.WriteFile(s.ProjectLocation, b, 0644)
 }
 
 //Load retrieve projects from config file
-func Load(s Settings) (*File, error) {
-	f := &File{Path: s.ProjectLocation}
-
-	file, err := os.Open(f.Path)
+func Load(s Settings) (Projects, error) {
+	file, err := os.Open(s.ProjectLocation)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return f, nil
+			return Projects{}, nil
 		}
 		return nil, err
 	}
 	defer file.Close()
 
-	if err := json.NewDecoder(file).Decode(&f.Projects); err != nil {
+	var f File
+	if err := json.NewDecoder(file).Decode(&f); err != nil {
 		return nil, err
 	}
 
-	aux := make([]Project, 0, len(f.Projects))
-	for i := range f.Projects {
-		if f.Projects[i].Enabled == nil || *f.Projects[i].Enabled {
-			aux = append(aux, f.Projects[i])
+	projects := make(Projects, 0)
+	for _, p := range f.Projects {
+		projects = append(projects, p)
+	}
+	for _, g := range f.Groups {
+		for i := range g.Projects {
+			p := g.Projects[i]
+			p.Group = g.Name
+			projects = append(projects, p)
 		}
 	}
-	f.Projects = aux
 
 	sessions, err := getSessions()
 	if err != nil {
 		return nil, errorf("error on get tmux sessions: %v", err)
 	}
-	for i, p := range f.Projects {
+	for i, p := range projects {
 		attached, ok := sessions[p.Name]
 		if ok {
-			f.Projects[i].Opened = true
-			f.Projects[i].Attached = attached
+			projects[i].Opened = true
+			projects[i].Attached = attached
 		}
 	}
 
-	return f, nil
+	return projects, nil
 }
 
 func LoadSettings() Settings {
