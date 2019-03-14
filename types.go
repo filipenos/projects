@@ -57,6 +57,16 @@ func (f *File) Get(name string) (*Project, int) {
 	return nil, -1
 }
 
+func (f *File) GetByPath(path string) (*Project, int) {
+	path = strings.TrimSpace(path)
+	for i := range f.Projects {
+		if f.Projects[i].Path == path {
+			return &f.Projects[i], i
+		}
+	}
+	return nil, -1
+}
+
 //Save save the current projects on conf file
 func Save(s Settings, f *File) error {
 	b, err := json.MarshalIndent(f.Projects, " ", "  ")

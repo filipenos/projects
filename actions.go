@@ -132,9 +132,14 @@ func list(c *cli.Context) error {
 }
 
 func open(c *cli.Context) error {
-	name := strings.TrimSpace(c.Args().First())
+	var (
+		name string
+		path string
+	)
+
+	name = strings.TrimSpace(c.Args().First())
 	if name == "" {
-		name, _ = current_pwd()
+		name, path = current_pwd()
 	}
 
 	projects, err := Load(LoadSettings())
@@ -144,7 +149,10 @@ func open(c *cli.Context) error {
 
 	p, _ := projects.Get(name)
 	if p == nil {
-		return errorf("project '%s' not found", name)
+		p, _ = projects.GetByPath(path)
+		if p == nil {
+			return errorf("project '%s' not found", name)
+		}
 	}
 	if p.Path == "" {
 		return errorf("project '%s' dont have path", p.Name)
