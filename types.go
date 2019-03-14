@@ -40,14 +40,11 @@ type Project struct {
 }
 
 type Projects []Project
+type Groups map[string]Projects
 
 func (projects Projects) Len() int           { return len(projects) }
 func (projects Projects) Swap(i, j int)      { projects[i], projects[j] = projects[j], projects[i] }
 func (projects Projects) Less(i, j int) bool { return projects[i].Name < projects[j].Name }
-
-func (projects Projects) Add(p Project) {
-	projects = append(projects, p)
-}
 
 func (projects Projects) Get(name string) (*Project, int) {
 	name = strings.TrimSpace(name)
@@ -71,17 +68,23 @@ func (projects Projects) GetByPath(path string) (*Project, int) {
 
 //Save save the current projects on conf file
 func (projects Projects) Save(s Settings) error {
-	file := File{}
-	file.Projects = make([]Project, 0)
-	file.Groups = make([]Group, 0)
+	groups := make(Groups, 0)
 	for i := range projects {
 		p := projects[i]
-		if p.Group == "" {
-			file.Projects = append(file.Projects, p)
-		} else {
+		projs := groups[p.Group]
+		projs = append(projs, p)
+		groups[p.Group] = projs
+	}
 
+	file := File{}
+	for k, v := range groups {
+		if k == "" {
+			file.Projects = v
+		} else {
+			file.Groups = append(file.Groups, Group{Name: k, Projects: v})
 		}
 	}
+
 	b, err := json.MarshalIndent(file, " ", "  ")
 	if err != nil {
 		return err

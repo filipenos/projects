@@ -70,7 +70,7 @@ func create(c *cli.Context) error {
 		return errorf("project '%s' already add to projects", p.Name)
 	}
 
-	projects.Add(*p)
+	projects = append(projects, *p)
 	if err := projects.Save(s); err != nil {
 		return err
 	}
@@ -335,7 +335,9 @@ func editProject(p *Project) (*Project, error) {
 	defer tmp.Remove()
 
 	d := `name={{.Name}}
-path={{.Path}}`
+path={{.Path}}
+description={{.Description}}
+group={{.Group}}`
 
 	tmpl := template.Must(template.New("editor").Parse(d))
 	if err := tmpl.Execute(tmp, p); err != nil {
@@ -364,11 +366,16 @@ func parseContent(data []byte) *Project {
 		if len(values) != 2 {
 			continue
 		}
+		v := strings.TrimSpace(values[1])
 		switch values[0] {
 		case "name":
-			p.Name = strings.TrimSpace(values[1])
+			p.Name = v
 		case "path":
-			p.Path = strings.TrimSpace(values[1])
+			p.Path = v
+		case "description":
+			p.Description = v
+		case "group":
+			p.Group = v
 		}
 	}
 	return p
