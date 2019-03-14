@@ -34,10 +34,10 @@ type Project struct {
 	Path        string `json:"path,omitempty"`
 	Description string `json:"description,omitempty"`
 
-	Group    string `json:"-"`
-	Opened   bool   `json:"-"`
-	Attached bool   `json:"-"`
-  ValidPath bool `json:"-"`
+	Group     string `json:"-"`
+	Opened    bool   `json:"-"`
+	Attached  bool   `json:"-"`
+	ValidPath bool   `json:"-"`
 }
 
 type Projects []Project
@@ -131,7 +131,7 @@ func Load(s Settings) (Projects, error) {
 			projects[i].Opened = true
 			projects[i].Attached = attached
 		}
-		f.Projects[i].ValidPath = isExist(p.Path)
+		projects[i].ValidPath = isExist(p.Path)
 	}
 
 	return projects, nil
