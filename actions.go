@@ -115,7 +115,7 @@ func list(c *cli.Context) error {
 		return errorf("error on load file: %v", err)
 	}
 
-	t := `{{range .Projects.Projects}}{{.Name}}{{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if $.Full}}
+	t := `{{range .Projects.Projects}}{{.Name}}{{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if not .ValidPath}} (invalid-path){{end}}{{if $.Full}}
   Path: {{.Path}}{{end}}
 {{else}}No projects yeat!
 {{end}}`
