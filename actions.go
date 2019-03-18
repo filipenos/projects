@@ -191,7 +191,7 @@ func open(c *cli.Context) error {
 	}
 
 	var hasSession bool
-	cmd := exec.Command("tmux", "has-session", "-t", name)
+	cmd := exec.Command("tmux", "has-session", "-t", p.Name)
 	out, err := cmd.CombinedOutput()
 	logDebug(c.Bool("debug"), "has-session return: %v", string(out))
 	if err == nil {
@@ -199,7 +199,7 @@ func open(c *cli.Context) error {
 	}
 
 	if !hasSession {
-		cmd := exec.Command("tmux", "new", "-s", name, "-n", name, "-c", p.Path, "-d")
+		cmd := exec.Command("tmux", "new", "-s", p.Name, "-n", p.Name, "-c", p.Path, "-d")
 		//option -d run tmux with daemon
 		// tmux new-session -d -s mySession -n myWindow
 		// tmux send-keys -t mySession:myWindow "cd /my/directory" Enter
@@ -225,7 +225,7 @@ func open(c *cli.Context) error {
 	if !c.Bool("d") {
 		args = append(args, "-d")
 	}
-	args = append(args, []string{"-t", name}...)
+	args = append(args, []string{"-t", p.Name}...)
 	cmd = exec.Command("tmux", args...)
 	cmd.Stdin = os.Stdin
 	out, err = cmd.CombinedOutput()
