@@ -32,7 +32,7 @@ func main() {
 		},
 		{
 			Name:    "update",
-			Aliases: []string{"u"},
+			Aliases: []string{"u", "edit", "e"},
 			Flags: []cli.Flag{
 				cli.BoolFlag{Name: "n, no-validate", Usage: "this option ignore path validation"},
 			},
