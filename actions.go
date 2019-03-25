@@ -191,12 +191,11 @@ func open(c *cli.Context) error {
 	}
 
 	var hasSession bool
-	cmd := exec.Command("tmux", "has-session", "-t", p.Name)
-	out, err := cmd.CombinedOutput()
-	logDebug(c.Bool("debug"), "has-session return: %v", string(out))
-	if err == nil {
-		hasSession = true
+	sessions, err := getSessions()
+	if err != nil {
+		return err
 	}
+	_, hasSession = sessions[p.Name]
 
 	if !hasSession {
 		cmd := exec.Command("tmux", "new", "-s", p.Name, "-n", p.Name, "-c", p.Path, "-d")
@@ -205,7 +204,7 @@ func open(c *cli.Context) error {
 		// tmux send-keys -t mySession:myWindow "cd /my/directory" Enter
 		// tmux send-keys -t mySession:myWindow "vim" Enter
 		// tmux attach -t mySession:myWindow
-		out, err = cmd.CombinedOutput()
+		out, err := cmd.CombinedOutput()
 		logDebug(c.Bool("debug"), "new-session return: %v", string(out))
 		if err != nil {
 			return errorf("error on new-session: %v", err)
@@ -226,9 +225,9 @@ func open(c *cli.Context) error {
 		args = append(args, "-d")
 	}
 	args = append(args, []string{"-t", p.Name}...)
-	cmd = exec.Command("tmux", args...)
+	cmd := exec.Command("tmux", args...)
 	cmd.Stdin = os.Stdin
-	out, err = cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return errorf("error on attach: %v", err)
 	}

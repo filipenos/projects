@@ -67,7 +67,8 @@ func getSessions() (map[string]bool, error) {
 			log("%v", p)
 			continue
 		}
-		m[p[0]] = strings.Contains(strings.Join(p[1:], ""), "attached")
+		name := strings.TrimSpace(p[0])
+		m[name] = strings.Contains(strings.Join(p[1:], ""), "attached")
 	}
 
 	return m, nil
