@@ -419,7 +419,7 @@ func export(c *cli.Context) error {
 
 	format := strings.TrimSpace(c.String("format"))
 	if len(format) == 0 {
-		return fmt.Errorf("Expected format (nerdtree|vimcommand)")
+		return fmt.Errorf("Expected format (nerdtree|vimcommand|vim-project)")
 	}
 
 	out := bytes.NewBufferString("")
@@ -437,15 +437,21 @@ command! %s call %s()`, title, p.Path, title, title)
 		case "nerdtree":
 			fmt.Fprintf(out, `%s %s
 `, p.Name, p.Path)
+		case "vim-project":
+			fmt.Fprintf(out, `Project '%s' , '%s'
+`, p.Path, p.Name)
 		}
 	}
 
 	if c.Bool("override") {
 		filename := os.Getenv("HOME")
-		if format == "nerdtree" {
-			filename += "/.NERDTreeBookmarks"
-		} else {
+		switch format {
+		case "vimcommand":
 			filename += "/.vimrc.projects"
+		case "nerdtree":
+			filename += "/.NERDTreeBookmarks"
+		case "vim-project":
+			filename += "/.vim-project.projects"
 		}
 		if err = ioutil.WriteFile(filename, out.Bytes(), 0666); err != nil {
 			return err
