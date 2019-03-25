@@ -337,6 +337,7 @@ func editProject(p *Project) (*Project, error) {
 	d := `name={{.Name}}
 path={{.Path}}
 description={{.Description}}
+icon={{.Icon}}
 group={{.Group}}`
 
 	tmpl := template.Must(template.New("editor").Parse(d))
@@ -374,6 +375,8 @@ func parseContent(data []byte) *Project {
 			p.Path = v
 		case "description":
 			p.Description = v
+		case "icon":
+			p.Icon = v
 		case "group":
 			p.Group = v
 		}

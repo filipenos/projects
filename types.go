@@ -24,15 +24,19 @@ type File struct {
 }
 
 type Group struct {
-	Name     string    `json:"name,omitempty"`
-	Projects []Project `json:"projects,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	Description string    `json:"description,omitempty"`
+	Icon        string    `json:"icon,omitempty"`
+	Projects    []Project `json:"projects,omitempty"`
+	Groups      []Group   `json:"groups,omitempty"`
 }
 
 //Project represent then project
 type Project struct {
 	Name        string `json:"name,omitempty"`
-	Path        string `json:"path,omitempty"`
+	Icon        string `json:"icon,omitempty"`
 	Description string `json:"description,omitempty"`
+	Path        string `json:"path,omitempty"`
 
 	Group     string `json:"-"`
 	Opened    bool   `json:"-"`
