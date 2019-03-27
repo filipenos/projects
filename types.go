@@ -6,16 +6,19 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 var (
-	configPath      = fmt.Sprintf("%s/.projects-settings.json", os.Getenv("HOME"))
-	defaultSettings = Settings{ProjectLocation: fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))}
+	configPath      = fmt.Sprintf("%s/.projects.config.yaml", os.Getenv("HOME"))
+	projectsPath    = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
+	defaultSettings = Settings{ProjectLocation: projectsPath}
 )
 
 //Settings save configuration
 type Settings struct {
-	ProjectLocation string `json:"project.location,omitempty"`
+	ProjectLocation string
 }
 
 type File struct {
@@ -141,23 +144,26 @@ func Load(s Settings) (Projects, error) {
 	return projects, nil
 }
 
+//LoadSettings load configuration used on projects
 func LoadSettings() Settings {
-	file, err := os.Open(configPath)
-	defer file.Close()
-	if os.IsNotExist(err) {
-		file, err = os.Create(configPath)
-		if err != nil {
-			return defaultSettings
-		}
-		if err = json.NewEncoder(file).Encode(defaultSettings); err != nil {
-			return defaultSettings
-		}
-		return defaultSettings
+	var (
+		settings Settings
+		v        = viper.New()
+	)
+
+	v.SetConfigFile(configPath)
+	if _, err := os.Stat(v.ConfigFileUsed()); os.IsNotExist(err) {
+		v.SetDefault("projectlocation", defaultSettings.ProjectLocation)
 	} else {
-		var settings Settings
-		if err := json.NewDecoder(file).Decode(&settings); err != nil {
-			return defaultSettings
+		if err := v.ReadInConfig(); err != nil {
+			settings = defaultSettings
 		}
-		return settings
+		if err := v.Unmarshal(&settings); err != nil {
+			settings = defaultSettings
+		}
 	}
+	if err := v.WriteConfig(); err != nil {
+		settings = defaultSettings
+	}
+	return settings
 }
