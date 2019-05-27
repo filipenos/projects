@@ -6,6 +6,8 @@ import (
 	"github.com/urfave/cli"
 )
 
+//TODO adicionar suporte a outra extensao de projetdos do vscode
+
 //TODO pensar em como lidar com projetos desabilitados.
 //ele não é listado, mas é necessário um lugar para remover, ou habilitar novamente
 //o que está acontecendo agora, é que se o parametro existir no json ele é utilizado
