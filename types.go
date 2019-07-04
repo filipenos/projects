@@ -24,6 +24,7 @@ type Settings struct {
 //Project represent then project
 type Project struct {
 	Name    string   `json:"name,omitempty"`
+	Alias   string   `json:"alias,omitempty"`
 	Path    string   `json:"rootPath,omitempty"`
 	Paths   []string `json:"paths,omitempty"`
 	Group   string   `json:"group,omitempty"`
@@ -43,7 +44,7 @@ func (projects Projects) Less(i, j int) bool { return projects[i].Name < project
 func (projects Projects) Get(name string) (*Project, int) {
 	name = strings.TrimSpace(name)
 	for i := range projects {
-		if projects[i].Name == name {
+		if projects[i].Name == name || projects[i].Alias == name {
 			return &projects[i], i
 		}
 	}
