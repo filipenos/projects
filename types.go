@@ -21,34 +21,20 @@ type Settings struct {
 	ProjectLocation string
 }
 
-type File struct {
-	Groups   []Group   `json:"groups,omitempty"`
-	Projects []Project `json:"projects,omitempty"`
-}
-
-type Group struct {
-	Name        string    `json:"name,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Icon        string    `json:"icon,omitempty"`
-	Projects    []Project `json:"projects,omitempty"`
-	Groups      []Group   `json:"groups,omitempty"`
-}
-
 //Project represent then project
 type Project struct {
-	Name        string `json:"name,omitempty"`
-	Icon        string `json:"icon,omitempty"`
-	Description string `json:"description,omitempty"`
-	Path        string `json:"path,omitempty"`
+	Name    string   `json:"name,omitempty"`
+	Path    string   `json:"rootPath,omitempty"`
+	Paths   []string `json:"paths,omitempty"`
+	Group   string   `json:"group,omitempty"`
+	Enabled bool     `json:"enabled,omitempty"`
 
-	Group     string `json:"-"`
-	Opened    bool   `json:"-"`
-	Attached  bool   `json:"-"`
-	ValidPath bool   `json:"-"`
+	Opened    bool `json:"-"`
+	Attached  bool `json:"-"`
+	ValidPath bool `json:"-"`
 }
 
 type Projects []Project
-type Groups map[string]Projects
 
 func (projects Projects) Len() int           { return len(projects) }
 func (projects Projects) Swap(i, j int)      { projects[i], projects[j] = projects[j], projects[i] }
@@ -76,24 +62,7 @@ func (projects Projects) GetByPath(path string) (*Project, int) {
 
 //Save save the current projects on conf file
 func (projects Projects) Save(s Settings) error {
-	groups := make(Groups, 0)
-	for i := range projects {
-		p := projects[i]
-		projs := groups[p.Group]
-		projs = append(projs, p)
-		groups[p.Group] = projs
-	}
-
-	file := File{}
-	for k, v := range groups {
-		if k == "" {
-			file.Projects = v
-		} else {
-			file.Groups = append(file.Groups, Group{Name: k, Projects: v})
-		}
-	}
-
-	b, err := json.MarshalIndent(file, " ", "  ")
+	b, err := json.MarshalIndent(projects, " ", "  ")
 	if err != nil {
 		return err
 	}
@@ -111,21 +80,9 @@ func Load(s Settings) (Projects, error) {
 	}
 	defer file.Close()
 
-	var f File
-	if err := json.NewDecoder(file).Decode(&f); err != nil {
+	var projects Projects
+	if err := json.NewDecoder(file).Decode(&projects); err != nil {
 		return nil, err
-	}
-
-	projects := make(Projects, 0)
-	for _, p := range f.Projects {
-		projects = append(projects, p)
-	}
-	for _, g := range f.Groups {
-		for i := range g.Projects {
-			p := g.Projects[i]
-			p.Group = g.Name
-			projects = append(projects, p)
-		}
 	}
 
 	sessions, err := getSessions()
