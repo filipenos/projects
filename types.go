@@ -26,9 +26,10 @@ type Project struct {
 	Name    string   `json:"name,omitempty"`
 	Alias   string   `json:"alias,omitempty"`
 	Path    string   `json:"rootPath,omitempty"`
-	Paths   []string `json:"paths,omitempty"`
 	Group   string   `json:"group,omitempty"`
 	Enabled bool     `json:"enabled,omitempty"`
+	SCM     string   `json:"scm,omitempty"`
+	Tags    []string `json:"tags,omitempty"`
 
 	Opened    bool `json:"-"`
 	Attached  bool `json:"-"`

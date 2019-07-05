@@ -40,6 +40,15 @@ func create(c *cli.Context) error {
 		return errorf("invalid size of arguments")
 	}
 
+	if p.Path != "" && isExist(fmt.Sprintf("%s/.git", p.Path)) {
+		cmd := exec.Command("git", "remote", "get-url", "origin")
+		out, _ := cmd.CombinedOutput()
+		if scm := strings.TrimSpace(string(out)); scm != "" {
+			p.SCM = scm
+		}
+
+	}
+
 	if c.Bool("editor") {
 		p, err = editProject(p)
 		if err != nil {
@@ -336,7 +345,7 @@ func open(c *cli.Context) error {
 	}
 
 	if c.Bool("code") {
-		cmd := exec.Command("code", p.Path)
+		cmd := exec.Command("code", "--reuse-window", p.Path)
 		cmd.Stdin = os.Stdin
 		return cmd.Run()
 	}
