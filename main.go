@@ -55,7 +55,8 @@ func main() {
 			Name:    "list",
 			Aliases: []string{"l", "ls"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "f, full", Usage: "show full info about project"},
+				cli.BoolFlag{Name: "s, simple", Usage: "show only name of project"},
+				cli.BoolFlag{Name: "p, path", Usage: "show path of project"},
 			},
 			Usage:     "list projects",
 			UsageText: "project list <options>",

@@ -124,14 +124,15 @@ func list(c *cli.Context) error {
 		return errorf("error on load file: %v", err)
 	}
 
-	t := `{{range .Projects}}{{.Name}}{{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if not .ValidPath}} (invalid-path){{end}}{{if $.Full}}
+	t := `{{range .Projects}}{{.Name}}{{if $.ExtraInfo}}{{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if not .ValidPath}} (invalid-path){{end}}{{end}}{{if $.Path}}
   Path: {{.Path}}{{end}}
 {{else}}No projects yeat!
 {{end}}`
 	tmpl := template.Must(template.New("editor").Parse(t))
 	ctx := map[string]interface{}{
-		"Projects": projects,
-		"Full":     c.Bool("full"),
+		"Projects":  projects,
+		"Path":      c.Bool("path"),
+		"ExtraInfo": !c.Bool("simple"),
 	}
 	err = tmpl.Execute(os.Stdout, ctx)
 	if err != nil {
