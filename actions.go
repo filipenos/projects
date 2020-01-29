@@ -27,7 +27,7 @@ func create(c *cli.Context) error {
 		err error
 	)
 
-	switch len(c.Args()) {
+	switch c.Args().Len() {
 	case 0:
 		p.Name, p.Path = current_pwd()
 	case 1:

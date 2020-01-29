@@ -17,15 +17,15 @@ func main() {
 	app := cli.NewApp()
 	app.EnableBashCompletion = true
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{Name: "debug", Usage: "debug commands"},
+		&cli.BoolFlag{Name: "debug", Usage: "debug commands"},
 	}
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{
 			Name:    "create",
 			Aliases: []string{"c", "add"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "e, editor", Usage: "use default editor to add"},
-				cli.BoolFlag{Name: "n, no-validate", Usage: "this option ignore path validation"},
+				&cli.BoolFlag{Name: "e, editor", Usage: "use default editor to add"},
+				&cli.BoolFlag{Name: "n, no-validate", Usage: "this option ignore path validation"},
 			},
 			Usage:     "create new project",
 			UsageText: "project create <name> <path>",
@@ -36,7 +36,7 @@ func main() {
 			Name:    "update",
 			Aliases: []string{"u", "edit", "e"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "n, no-validate", Usage: "this option ignore path validation"},
+				&cli.BoolFlag{Name: "n, no-validate", Usage: "this option ignore path validation"},
 			},
 			Usage:     "update project",
 			UsageText: "project update <name>",
@@ -55,8 +55,8 @@ func main() {
 			Name:    "list",
 			Aliases: []string{"l", "ls"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "s, simple", Usage: "show only name of project"},
-				cli.BoolFlag{Name: "p, path", Usage: "show path of project"},
+				&cli.BoolFlag{Name: "s, simple", Usage: "show only name of project"},
+				&cli.BoolFlag{Name: "p, path", Usage: "show path of project"},
 			},
 			Usage:     "list projects",
 			UsageText: "project list <options>",
@@ -67,9 +67,9 @@ func main() {
 			Name:    "open",
 			Aliases: []string{"o", "attach"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "d, duplicate", Usage: "duplicate running session"},
-				cli.BoolFlag{Name: "vim", Usage: "open tmux with vim opened"},
-				cli.BoolFlag{Name: "code", Usage: "open project with vscode"},
+				&cli.BoolFlag{Name: "d, duplicate", Usage: "duplicate running session"},
+				&cli.BoolFlag{Name: "vim", Usage: "open tmux with vim opened"},
+				&cli.BoolFlag{Name: "code", Usage: "open project with vscode"},
 			},
 			Usage:     "open project using tmux",
 			UsageText: "project open <name>",
@@ -80,8 +80,8 @@ func main() {
 			Name:    "close",
 			Aliases: []string{"x", "deattach"},
 			Flags: []cli.Flag{
-				cli.BoolFlag{Name: "a, all", Usage: "all opened projects"},
-				cli.BoolFlag{Name: "k, kill", Usage: "kill running project"},
+				&cli.BoolFlag{Name: "a, all", Usage: "all opened projects"},
+				&cli.BoolFlag{Name: "k, kill", Usage: "kill running project"},
 			},
 			Usage:     "close project",
 			UsageText: "close project <?name>",
@@ -91,8 +91,8 @@ func main() {
 		{
 			Name: "export",
 			Flags: []cli.Flag{
-				cli.StringFlag{Name: "f, format", Usage: "export projects to (nerdtree|vimcommand|vim-project)"},
-				cli.BoolFlag{Name: "override", Usage: "Override default configuration file"},
+				&cli.StringFlag{Name: "f, format", Usage: "export projects to (nerdtree|vimcommand|vim-project)"},
+				&cli.BoolFlag{Name: "override", Usage: "Override default configuration file"},
 			},
 			Usage:     "export projects to use in another locations",
 			UsageText: "project -f <format>",
