@@ -68,13 +68,20 @@ func main() {
 			Aliases: []string{"o", "attach"},
 			Flags: []cli.Flag{
 				&cli.BoolFlag{Name: "d, duplicate", Usage: "duplicate running session"},
-				&cli.BoolFlag{Name: "vim", Usage: "open tmux with vim opened"},
-				&cli.BoolFlag{Name: "code", Usage: "open project with vscode"},
+				// &cli.BoolFlag{Name: "vim", Usage: "open tmux with vim opened"},
 			},
 			Usage:     "open project using tmux",
 			UsageText: "project open <name>",
 			ArgsUsage: "name",
 			Action:    open,
+		},
+		{
+			Name:      "code",
+			Aliases:   []string{"vscode"},
+			Usage:     "open project using code",
+			UsageText: "project code <name>",
+			ArgsUsage: "name",
+			Action:    code,
 		},
 		{
 			Name:    "close",

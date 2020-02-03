@@ -345,12 +345,6 @@ func open(c *cli.Context) error {
 		return errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
 	}
 
-	if c.Bool("code") {
-		cmd := exec.Command("code", "--reuse-window", p.Path)
-		cmd.Stdin = os.Stdin
-		return cmd.Run()
-	}
-
 	log("open path '%s'", p.Path)
 
 	if isRunning := os.Getenv("TMUX"); isRunning != "" {
@@ -417,6 +411,43 @@ func open(c *cli.Context) error {
 	}
 	logDebug(c.Bool("debug"), "attch return: %v", string(out))
 	return nil
+}
+
+func code(c *cli.Context) error {
+	var (
+		name string
+		path string
+	)
+
+	name = strings.TrimSpace(c.Args().First())
+	if name == "" {
+		name, path = current_pwd()
+	}
+
+	projects, err := Load(LoadSettings())
+	if err != nil {
+		return err
+	}
+
+	p, _ := projects.Get(name)
+	if p == nil {
+		p, _ = projects.GetByPath(path)
+		if p == nil {
+			return errorf("project '%s' not found", name)
+		}
+	}
+	if p.Path == "" {
+		return errorf("project '%s' dont have path", p.Name)
+	}
+	if !isExist(p.Path) {
+		return errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
+	}
+
+	log("open path '%s' on code", p.Path)
+
+	cmd := exec.Command("code", "--reuse-window", p.Path)
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }
 
 func close(c *cli.Context) error {
