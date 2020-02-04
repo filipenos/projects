@@ -271,7 +271,7 @@ func export(c *cli.Context) error {
 
 	format := strings.TrimSpace(c.String("format"))
 	if len(format) == 0 {
-		return fmt.Errorf("Expected format (nerdtree|vimcommand|vim-project)")
+		return fmt.Errorf("Expected format (nerdtree|vimcommand|vim-project|aliases)")
 	}
 
 	out := bytes.NewBufferString("")
@@ -292,6 +292,9 @@ command! %s call %s()`, title, p.Path, title, title)
 		case "vim-project":
 			fmt.Fprintf(out, `Project '%s' , '%s'
 `, p.Path, p.Name)
+		case "alias", "aliases":
+			fmt.Fprintf(out, `alias %s="cd %s"
+`, p.Name, p.Path)
 		}
 	}
 
