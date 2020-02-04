@@ -98,7 +98,7 @@ func main() {
 		{
 			Name: "export",
 			Flags: []cli.Flag{
-				&cli.StringFlag{Name: "f, format", Usage: "export projects to (nerdtree|vimcommand|vim-project)"},
+				&cli.StringFlag{Name: "format", Usage: "export projects to (nerdtree|vimcommand|vim-project|aliases)", Aliases: []string{"f"}},
 				&cli.BoolFlag{Name: "override", Usage: "Override default configuration file"},
 			},
 			Usage:     "export projects to use in another locations",
