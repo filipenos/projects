@@ -20,14 +20,12 @@ var (
 )
 
 func create(c *cli.Context) error {
-	c.Args()
-
 	var (
 		p   = &Project{}
 		err error
 	)
 
-	switch c.Args().Len() {
+	switch len(c.Args()) {
 	case 0:
 		p.Name, p.Path = current_pwd()
 	case 1:

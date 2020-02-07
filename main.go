@@ -19,7 +19,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		&cli.BoolFlag{Name: "debug", Usage: "debug commands"},
 	}
-	app.Commands = []*cli.Command{
+	app.Commands = []cli.Command{
 		{
 			Name:    "create",
 			Aliases: []string{"c", "add"},
@@ -98,7 +98,7 @@ func main() {
 		{
 			Name: "export",
 			Flags: []cli.Flag{
-				&cli.StringFlag{Name: "format", Usage: "export projects to (nerdtree|vimcommand|vim-project|aliases)", Aliases: []string{"f"}},
+				&cli.StringFlag{Name: "format", Usage: "export projects to (nerdtree|vimcommand|vim-project|aliases)"},
 				&cli.BoolFlag{Name: "override", Usage: "Override default configuration file"},
 			},
 			Usage:     "export projects to use in another locations",
