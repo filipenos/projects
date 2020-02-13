@@ -76,8 +76,11 @@ func main() {
 			Action:    open,
 		},
 		{
-			Name:      "code",
-			Aliases:   []string{"vscode"},
+			Name:    "code",
+			Aliases: []string{"vscode"},
+			Flags: []cli.Flag{
+				&cli.BoolFlag{Name: "r, reuse-window", Usage: "Force to open a file or folder in an already opened window"},
+			},
 			Usage:     "open project using code",
 			UsageText: "project code <name>",
 			ArgsUsage: "name",

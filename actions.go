@@ -446,7 +446,12 @@ func code(c *cli.Context) error {
 
 	log("open path '%s' on code", p.Path)
 
-	cmd := exec.Command("code", "--reuse-window", p.Path)
+	pos := "--new-window"
+	if c.Bool("r") {
+		pos = "--reuse-window"
+	}
+
+	cmd := exec.Command("code", pos, p.Path)
 	cmd.Stdin = os.Stdin
 	return cmd.Run()
 }
