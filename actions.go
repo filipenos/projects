@@ -348,26 +348,7 @@ func open(c *cli.Context) error {
 
 	log("open path '%s'", p.Path)
 
-	if isRunning := os.Getenv("TMUX"); isRunning != "" {
-		return errorf("can not open tmux inside another running: %s", isRunning)
-		//TODO: não funcionou
-		/*		cmd := exec.Command("tmux", "display-message", "-p", "#S")
-				out, err := cmd.CombinedOutput()
-				if err != nil {
-					return errorf("error on get attach session name: %v", err)
-				}
-				currentAttached := strings.TrimSpace(string(out))
-				log("detach running session %s", currentAttached)
-				if currentAttached != "" {
-					cmd = exec.Command("tmux", "detach-client", "-s", currentAttached)
-					if err := cmd.Run(); err != nil {
-						return errorf("error on detach-client: %v", err)
-					}
-				}
-				if err := os.Setenv("TMUX", ""); err != nil {
-					return errorf("error on clean tmux env: %v", err)
-				}*/
-	}
+	//TODO (filipenos) validar se esta dentro de um tmux, acontece algo estranhoooo
 
 	var hasSession bool
 	sessions, err := getSessions()
