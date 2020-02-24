@@ -486,3 +486,56 @@ func close(c *cli.Context) error {
 	}
 	return nil
 }
+
+func scm(c *cli.Context) error {
+	var (
+		name string
+		path string
+	)
+
+	name = strings.TrimSpace(c.Args().Get(0))
+	if name == "" {
+		name, path = current_pwd()
+	}
+	log("using '%s' name", name)
+
+	s := LoadSettings()
+	projects, err := Load(s)
+	if err != nil {
+		return err
+	}
+
+	p, index := projects.Get(name)
+	if p == nil {
+		p, _ = projects.GetByPath(path)
+		if p == nil {
+			return errorf("project '%s' not found", name)
+		}
+	}
+	if p.Path == "" {
+		return errorf("project '%s' dont have path", p.Name)
+	}
+	if !isExist(p.Path) {
+		return errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
+	}
+
+	log("using path: %s", p.Path)
+
+	if c.Bool("set") {
+		url := c.Args().Get(1)
+		if url == "" {
+			cmd := exec.Command("git", "-C", path, "remote", "get-url", "origin")
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				return err
+			}
+			url = strings.TrimSpace(string(out))
+		}
+		log("setting scm url %s", url)
+		p.SCM = url
+		projects[index] = *p
+		return projects.Save(s)
+	}
+
+	return nil
+}

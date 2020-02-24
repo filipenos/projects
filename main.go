@@ -116,6 +116,14 @@ func main() {
 			ArgsUsage: "name",
 			Action:    path,
 		},
+		{
+			Name:    "scm",
+			Aliases: []string{"git"},
+			Flags: []cli.Flag{
+				&cli.BoolFlag{Name: "set", Usage: ""},
+			},
+			Action: scm,
+		},
 	}
 	app.Name = "Projects"
 	app.Usage = "Simple manager for your projects"
