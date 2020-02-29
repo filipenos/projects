@@ -79,7 +79,7 @@ func main() {
 			Name:    "code",
 			Aliases: []string{"vscode"},
 			Flags: []cli.Flag{
-				&cli.BoolFlag{Name: "r, reuse-window", Usage: "Force to open a file or folder in an already opened window"},
+				//&cli.BoolFlag{Name: "r, reuse-window", Usage: "Force to open a file or folder in an already opened window"},
 				&cli.BoolFlag{Name: "r, recursively", Usage: "if name is empty, search recursively on path"},
 			},
 			Usage:     "open project using code",
