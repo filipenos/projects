@@ -318,12 +318,14 @@ command! %s call %s()`, title, p.Path, title, title)
 
 func open(c *cli.Context) error {
 	var (
-		name string
-		path string
+		name        string
+		path        string
+		withoutName bool
 	)
 
 	name = strings.TrimSpace(c.Args().First())
 	if name == "" {
+		withoutName = true
 		name, path = current_pwd()
 	}
 
@@ -332,7 +334,26 @@ func open(c *cli.Context) error {
 		return err
 	}
 
-	p, _ := projects.Get(name)
+	var p *Project
+	if c.Bool("r") && withoutName {
+		log("search any project on path %s", path)
+		paths := strings.Split(path, "/")
+		for i := len(paths) - 1; i >= 0; i-- {
+			namePath := strings.TrimSpace(paths[i])
+			if namePath == "" {
+				continue
+			}
+			p, _ = projects.Get(namePath)
+			if p != nil {
+				log("found project %s on path", namePath)
+				name = namePath
+				break
+			}
+		}
+	} else {
+		p, _ = projects.Get(name)
+	}
+
 	if p == nil {
 		p, _ = projects.GetByPath(path)
 		if p == nil {
@@ -397,8 +418,9 @@ func open(c *cli.Context) error {
 
 func code(c *cli.Context) error {
 	var (
-		name string
-		path string
+		name        string
+		path        string
+		withoutName bool
 	)
 
 	name = strings.TrimSpace(c.Args().First())
@@ -411,7 +433,26 @@ func code(c *cli.Context) error {
 		return err
 	}
 
-	p, _ := projects.Get(name)
+	var p *Project
+	if c.Bool("r") && withoutName {
+		log("search any project on path %s", path)
+		paths := strings.Split(path, "/")
+		for i := len(paths) - 1; i >= 0; i-- {
+			namePath := strings.TrimSpace(paths[i])
+			if namePath == "" {
+				continue
+			}
+			p, _ = projects.Get(namePath)
+			if p != nil {
+				log("found project %s on path", namePath)
+				name = namePath
+				break
+			}
+		}
+	} else {
+		p, _ = projects.Get(name)
+	}
+
 	if p == nil {
 		p, _ = projects.GetByPath(path)
 		if p == nil {

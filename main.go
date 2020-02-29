@@ -68,7 +68,7 @@ func main() {
 			Aliases: []string{"o", "attach"},
 			Flags: []cli.Flag{
 				&cli.BoolFlag{Name: "d, duplicate", Usage: "duplicate running session"},
-				// &cli.BoolFlag{Name: "vim", Usage: "open tmux with vim opened"},
+				&cli.BoolFlag{Name: "r, recursively", Usage: "if name is empty, search recursively on path"},
 			},
 			Usage:     "open project using tmux",
 			UsageText: "project open <name>",
@@ -80,6 +80,7 @@ func main() {
 			Aliases: []string{"vscode"},
 			Flags: []cli.Flag{
 				&cli.BoolFlag{Name: "r, reuse-window", Usage: "Force to open a file or folder in an already opened window"},
+				&cli.BoolFlag{Name: "r, recursively", Usage: "if name is empty, search recursively on path"},
 			},
 			Usage:     "open project using code",
 			UsageText: "project code <name>",
