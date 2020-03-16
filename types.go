@@ -13,12 +13,13 @@ import (
 var (
 	configPath      = fmt.Sprintf("%s/.projects.config.yaml", os.Getenv("HOME"))
 	projectsPath    = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
-	defaultSettings = Settings{ProjectLocation: projectsPath}
+	defaultSettings = Settings{ProjectLocation: projectsPath, Editor: "code"}
 )
 
 //Settings save configuration
 type Settings struct {
 	ProjectLocation string
+	Editor          string
 }
 
 //Project represent then project
@@ -113,6 +114,7 @@ func LoadSettings() Settings {
 	v.SetConfigFile(configPath)
 	if _, err := os.Stat(v.ConfigFileUsed()); os.IsNotExist(err) {
 		v.SetDefault("projectlocation", defaultSettings.ProjectLocation)
+		v.SetDefault("editor", defaultSettings.Editor)
 	} else {
 		if err := v.ReadInConfig(); err != nil {
 			settings = defaultSettings

@@ -81,6 +81,7 @@ func main() {
 			Flags: []cli.Flag{
 				//&cli.BoolFlag{Name: "r, reuse-window", Usage: "Force to open a file or folder in an already opened window"},
 				&cli.BoolFlag{Name: "r, recursively", Usage: "if name is empty, search recursively on path"},
+				&cli.StringFlag{Name: "e, editor", Usage: "change default editor (vscode)"},
 			},
 			Usage:     "open project using code",
 			UsageText: "project code <name>",

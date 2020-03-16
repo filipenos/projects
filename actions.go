@@ -421,6 +421,7 @@ func code(c *cli.Context) error {
 		name        string
 		path        string
 		withoutName bool
+		settings    = LoadSettings()
 	)
 
 	name = strings.TrimSpace(c.Args().First())
@@ -428,7 +429,7 @@ func code(c *cli.Context) error {
 		name, path = current_pwd()
 	}
 
-	projects, err := Load(LoadSettings())
+	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
@@ -466,14 +467,23 @@ func code(c *cli.Context) error {
 		return errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
 	}
 
-	log("open path '%s' on code", p.Path)
+	editor := "code"
+	args := make([]string, 0)
 
-	pos := "--new-window"
-	if c.Bool("r") {
-		pos = "--reuse-window"
+	if edit := c.String("e"); edit != "" {
+		editor = edit
+	} else {
+		pos := "--new-window"
+		if c.Bool("r") {
+			pos = "--reuse-window"
+		}
+		args = append(args, pos)
 	}
+	args = append(args, p.Path)
 
-	cmd := exec.Command("code", pos, p.Path)
+	log("open path '%s' on ", p.Path, editor)
+
+	cmd := exec.Command(editor, args...)
 	cmd.Stdin = os.Stdin
 	return cmd.Run()
 }
