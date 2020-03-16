@@ -121,6 +121,7 @@ func list(c *cli.Context) error {
 	if err != nil {
 		return errorf("error on load file: %v", err)
 	}
+	sort.Sort(projects)
 
 	t := `{{range .Projects}}{{.Name}}{{if $.ExtraInfo}}{{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if not .ValidPath}} (invalid-path){{end}}{{end}}{{if $.Path}}
   Path: {{.Path}}{{end}}
