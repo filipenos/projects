@@ -39,7 +39,7 @@ func create(c *cli.Context) error {
 	}
 
 	if p.Path != "" && isExist(fmt.Sprintf("%s/.git", p.Path)) {
-		cmd := exec.Command("git", "remote", "get-url", "origin")
+		cmd := exec.Command("git", "-C", p.Path, "remote", "get-url", "origin")
 		out, _ := cmd.CombinedOutput()
 		if scm := strings.TrimSpace(string(out)); scm != "" {
 			p.SCM = scm
