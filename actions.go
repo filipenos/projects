@@ -13,6 +13,8 @@ import (
 	"github.com/urfave/cli"
 )
 
+//TODO (filipenos) o project manager possui a variavel $home, podemos utilizala para gravar o path, ai nao importa qual distro esteja usando
+
 var (
 	ErrNameRequired = errorf("name is required")
 	ErrPathRequired = errorf("path is required")
