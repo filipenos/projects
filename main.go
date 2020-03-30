@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 //TODO adicionar suporte a outra extensao de projetdos do vscode
@@ -19,7 +19,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		&cli.BoolFlag{Name: "debug", Usage: "debug commands"},
 	}
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{
 			Name:    "create",
 			Aliases: []string{"c", "add"},

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 //TODO (filipenos) o project manager possui a variavel $home, podemos utilizala para gravar o path, ai nao importa qual distro esteja usando
@@ -34,7 +34,7 @@ func create(c *cli.Context) error {
 		err error
 	)
 
-	switch len(c.Args()) {
+	switch c.Args().Len() {
 	case 0:
 		p.Name, p.Path = current_pwd()
 	case 1:
