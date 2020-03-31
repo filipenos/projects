@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 //TODO adicionar suporte a outra extensao de projetdos do vscode
@@ -19,7 +19,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		&cli.BoolFlag{Name: "debug", Usage: "debug commands"},
 	}
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{
 			Name:    "create",
 			Aliases: []string{"c", "add"},
@@ -79,7 +79,6 @@ func main() {
 			Name:    "code",
 			Aliases: []string{"vscode"},
 			Flags: []cli.Flag{
-				//&cli.BoolFlag{Name: "r, reuse-window", Usage: "Force to open a file or folder in an already opened window"},
 				&cli.BoolFlag{Name: "r, recursively", Usage: "if name is empty, search recursively on path"},
 				&cli.StringFlag{Name: "e, editor", Usage: "change default editor (vscode)"},
 			},
@@ -96,7 +95,7 @@ func main() {
 				&cli.BoolFlag{Name: "k, kill", Usage: "kill running project"},
 			},
 			Usage:     "close project",
-			UsageText: "close project <?name>",
+			UsageText: "close project <name>",
 			ArgsUsage: "name",
 			Action:    close,
 		},

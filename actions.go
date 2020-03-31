@@ -10,16 +10,23 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 //TODO (filipenos) o project manager possui a variavel $home, podemos utilizala para gravar o path, ai nao importa qual distro esteja usando
 
+//Errors returned
 var (
 	ErrNameRequired = errorf("name is required")
 	ErrPathRequired = errorf("path is required")
 	ErrPathNoExist  = errorf("path is no exists")
 )
+
+var settings Settings
+
+func init() {
+	settings = LoadSettings()
+}
 
 func create(c *cli.Context) error {
 	var (
@@ -27,7 +34,7 @@ func create(c *cli.Context) error {
 		err error
 	)
 
-	switch len(c.Args()) {
+	switch c.Args().Len() {
 	case 0:
 		p.Name, p.Path = current_pwd()
 	case 1:
@@ -69,8 +76,7 @@ func create(c *cli.Context) error {
 		}
 	}
 
-	s := LoadSettings()
-	projects, err := Load(s)
+	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
@@ -80,7 +86,7 @@ func create(c *cli.Context) error {
 	}
 
 	projects = append(projects, *p)
-	if err := projects.Save(s); err != nil {
+	if err := projects.Save(settings); err != nil {
 		return err
 	}
 	log("Add project: '%s' path: '%s'", p.Name, p.Path)
@@ -93,8 +99,7 @@ func delete(c *cli.Context) error {
 		return ErrNameRequired
 	}
 
-	s := LoadSettings()
-	projects, err := Load(s)
+	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
@@ -115,11 +120,11 @@ func delete(c *cli.Context) error {
 
 	log("Project '%s' removed successfully!", name)
 	projects = aux
-	return projects.Save(s)
+	return projects.Save(settings)
 }
 
 func list(c *cli.Context) error {
-	projects, err := Load(LoadSettings())
+	projects, err := Load(settings)
 	if err != nil {
 		return errorf("error on load file: %v", err)
 	}
@@ -148,8 +153,7 @@ func update(c *cli.Context) error {
 		return ErrNameRequired
 	}
 
-	s := LoadSettings()
-	projects, err := Load(s)
+	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
@@ -180,7 +184,7 @@ func update(c *cli.Context) error {
 	}
 
 	projects[index] = *edited
-	return projects.Save(s)
+	return projects.Save(settings)
 }
 
 func editProject(p *Project) (*Project, error) {
@@ -243,7 +247,7 @@ func path(c *cli.Context) error {
 		return ErrNameRequired
 	}
 
-	projects, err := Load(LoadSettings())
+	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
@@ -265,7 +269,7 @@ func path(c *cli.Context) error {
 }
 
 func export(c *cli.Context) error {
-	projects, err := Load(LoadSettings())
+	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
@@ -321,8 +325,7 @@ command! %s call %s()`, title, p.Path, title, title)
 
 func open(c *cli.Context) error {
 	var (
-		name        string
-		path        string
+		name, path  string
 		withoutName bool
 	)
 
@@ -332,7 +335,7 @@ func open(c *cli.Context) error {
 		name, path = current_pwd()
 	}
 
-	projects, err := Load(LoadSettings())
+	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
@@ -421,10 +424,8 @@ func open(c *cli.Context) error {
 
 func code(c *cli.Context) error {
 	var (
-		name        string
-		path        string
+		name, path  string
 		withoutName bool
-		settings    = LoadSettings()
 	)
 
 	name = strings.TrimSpace(c.Args().First())
@@ -484,7 +485,7 @@ func code(c *cli.Context) error {
 	}
 	args = append(args, p.Path)
 
-	log("open path '%s' on ", p.Path, editor)
+	log("open path '%s' on '%s'", p.Path, editor)
 
 	cmd := exec.Command(editor, args...)
 	cmd.Stdin = os.Stdin
@@ -492,7 +493,7 @@ func code(c *cli.Context) error {
 }
 
 func close(c *cli.Context) error {
-	projects, err := Load(LoadSettings())
+	projects, err := Load(settings)
 	if err != nil {
 		return errorf("error on load file: %v", err)
 	}
@@ -553,8 +554,7 @@ func scm(c *cli.Context) error {
 	}
 	log("using '%s' name", name)
 
-	s := LoadSettings()
-	projects, err := Load(s)
+	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
@@ -588,7 +588,7 @@ func scm(c *cli.Context) error {
 		log("setting scm url %s", url)
 		p.SCM = url
 		projects[index] = *p
-		return projects.Save(s)
+		return projects.Save(settings)
 	}
 
 	return nil
