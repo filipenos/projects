@@ -112,7 +112,7 @@ func main() {
 		},
 		{
 			Name:      "path",
-			Aliases:   []string{"pt"},
+			Aliases:   []string{"pt", "pwd"},
 			Usage:     "show path of project",
 			UsageText: "project path <name>",
 			ArgsUsage: "name",
