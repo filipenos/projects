@@ -386,11 +386,6 @@ func open(c *cli.Context) error {
 
 	if !hasSession {
 		cmd := exec.Command("tmux", "new", "-s", p.Name, "-n", p.Name, "-c", p.Path, "-d")
-		//option -d run tmux with daemon
-		// tmux new-session -d -s mySession -n myWindow
-		// tmux send-keys -t mySession:myWindow "cd /my/directory" Enter
-		// tmux send-keys -t mySession:myWindow "vim" Enter
-		// tmux attach -t mySession:myWindow
 		out, err := cmd.CombinedOutput()
 		logDebug(c.Bool("debug"), "new-session return: %v", string(out))
 		if err != nil {
