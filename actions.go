@@ -187,60 +187,6 @@ func update(c *cli.Context) error {
 	return projects.Save(settings)
 }
 
-func editProject(p *Project) (*Project, error) {
-	tmp, err := NewTempFile()
-	if err != nil {
-		return nil, err
-	}
-	defer tmp.Remove()
-
-	d := `name={{.Name}}
-path={{.Path}}
-group={{.Group}}
-enabled={{.Enabled}}`
-
-	tmpl := template.Must(template.New("editor").Parse(d))
-	if err := tmpl.Execute(tmp, p); err != nil {
-		return nil, err
-	}
-
-	tmp.ReadFromUser()
-
-	if err := tmp.Close(); err != nil {
-		return nil, err
-	}
-
-	content, err := tmp.GetContent()
-	if err != nil {
-		return nil, err
-	}
-	return parseContent(content), nil
-}
-
-func parseContent(data []byte) *Project {
-	lines := strings.Split(string(data), "\n")
-	p := &Project{}
-	for i := range lines {
-		line := strings.TrimSpace(lines[i])
-		values := strings.Split(line, "=")
-		if len(values) != 2 {
-			continue
-		}
-		v := strings.TrimSpace(values[1])
-		switch values[0] {
-		case "name":
-			p.Name = v
-		case "path":
-			p.Path = v
-		case "group":
-			p.Group = v
-		case "enabled":
-			p.Enabled = v == "true"
-		}
-	}
-	return p
-}
-
 func path(c *cli.Context) error {
 	name := strings.TrimSpace(c.Args().First())
 	if name == "" {
