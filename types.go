@@ -63,6 +63,38 @@ func (projects Projects) GetByPath(path string) (*Project, int) {
 	return nil, -1
 }
 
+func (projects Projects) Find(name, path string) (*Project, int) {
+	var (
+		project *Project
+		pos     int
+	)
+	if name != "" {
+		project, pos = projects.Get(name)
+		if project != nil {
+			return project, pos
+		}
+	}
+	if path != "" {
+		project, pos = projects.GetByPath(path)
+		if project != nil {
+			return project, pos
+		}
+
+		paths := strings.Split(path, "/")
+		for i := len(paths) - 1; i >= 0; i-- {
+			namePath := strings.TrimSpace(paths[i])
+			if namePath == "" {
+				continue
+			}
+			project, pos = projects.Get(namePath)
+			if project != nil {
+				return project, pos
+			}
+		}
+	}
+	return nil, -1
+}
+
 //Save save the current projects on conf file
 func (projects Projects) Save(s Settings) error {
 	b, err := json.MarshalIndent(projects, " ", "  ")

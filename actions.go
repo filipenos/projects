@@ -36,10 +36,10 @@ func create(c *cli.Context) error {
 
 	switch c.Args().Len() {
 	case 0:
-		p.Name, p.Path = current_pwd()
+		p.Name, p.Path = currentPwd()
 	case 1:
 		p.Name = strings.TrimSpace(c.Args().Get(0))
-		_, p.Path = current_pwd()
+		_, p.Path = currentPwd()
 	case 2:
 		p.Name = strings.TrimSpace(c.Args().Get(0))
 		p.Path = strings.TrimSpace(c.Args().Get(1))
@@ -324,47 +324,14 @@ command! %s call %s()`, title, p.Path, title, title)
 }
 
 func open(c *cli.Context) error {
-	var (
-		name, path  string
-		withoutName bool
-	)
-
-	name = strings.TrimSpace(c.Args().First())
-	if name == "" {
-		withoutName = true
-		name, path = current_pwd()
-	}
-
 	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
 
-	var p *Project
-	if c.Bool("r") && withoutName {
-		log("search any project on path %s", path)
-		paths := strings.Split(path, "/")
-		for i := len(paths) - 1; i >= 0; i-- {
-			namePath := strings.TrimSpace(paths[i])
-			if namePath == "" {
-				continue
-			}
-			p, _ = projects.Get(namePath)
-			if p != nil {
-				log("found project %s on path", namePath)
-				name = namePath
-				break
-			}
-		}
-	} else {
-		p, _ = projects.Get(name)
-	}
-
+	p, _ := projects.Find(safeName(c.Args().First()))
 	if p == nil {
-		p, _ = projects.GetByPath(path)
-		if p == nil {
-			return errorf("project '%s' not found", name)
-		}
+		return errorf("project not found")
 	}
 	if p.Path == "" {
 		return errorf("project '%s' dont have path", p.Name)
@@ -423,46 +390,15 @@ func open(c *cli.Context) error {
 }
 
 func code(c *cli.Context) error {
-	var (
-		name, path  string
-		withoutName bool
-	)
-
-	name = strings.TrimSpace(c.Args().First())
-	if name == "" {
-		name, path = current_pwd()
-	}
-
 	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
 
-	var p *Project
-	if c.Bool("r") && withoutName {
-		log("search any project on path %s", path)
-		paths := strings.Split(path, "/")
-		for i := len(paths) - 1; i >= 0; i-- {
-			namePath := strings.TrimSpace(paths[i])
-			if namePath == "" {
-				continue
-			}
-			p, _ = projects.Get(namePath)
-			if p != nil {
-				log("found project %s on path", namePath)
-				name = namePath
-				break
-			}
-		}
-	} else {
-		p, _ = projects.Get(name)
-	}
-
+	p, _ := projects.Find(safeName(c.Args().First()))
 	if p == nil {
-		p, _ = projects.GetByPath(path)
-		if p == nil {
-			return errorf("project '%s' not found", name)
-		}
+		return errorf("project not found")
+
 	}
 	if p.Path == "" {
 		return errorf("project '%s' dont have path", p.Name)
@@ -543,28 +479,14 @@ func close(c *cli.Context) error {
 }
 
 func scm(c *cli.Context) error {
-	var (
-		name string
-		path string
-	)
-
-	name = strings.TrimSpace(c.Args().Get(0))
-	if name == "" {
-		name, path = current_pwd()
-	}
-	log("using '%s' name", name)
-
 	projects, err := Load(settings)
 	if err != nil {
 		return err
 	}
 
-	p, index := projects.Get(name)
+	p, index := projects.Find(safeName(c.Args().First()))
 	if p == nil {
-		p, _ = projects.GetByPath(path)
-		if p == nil {
-			return errorf("project '%s' not found", name)
-		}
+		return errorf("project not found")
 	}
 	if p.Path == "" {
 		return errorf("project '%s' dont have path", p.Name)
@@ -578,7 +500,7 @@ func scm(c *cli.Context) error {
 	if c.Bool("set") {
 		url := c.Args().Get(1)
 		if url == "" {
-			cmd := exec.Command("git", "-C", path, "remote", "get-url", "origin")
+			cmd := exec.Command("git", "-C", p.Path, "remote", "get-url", "origin")
 			out, err := cmd.CombinedOutput()
 			if err != nil {
 				return err
