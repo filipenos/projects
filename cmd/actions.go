@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/urfave/cli/v2"
+	"github.com/spf13/cobra"
 )
 
 //TODO (filipenos) o project manager possui a variavel $home, podemos utilizala para gravar o path, ai nao importa qual distro esteja usando
@@ -22,27 +22,21 @@ var (
 	ErrPathNoExist  = errorf("path is no exists")
 )
 
-var settings Settings
-
-func init() {
-	settings = LoadSettings()
-}
-
-func create(c *cli.Context) error {
+func create(cmdParam *cobra.Command, params []string) error {
 	var (
 		p   = &Project{}
 		err error
 	)
 
-	switch c.Args().Len() {
+	switch len(params) {
 	case 0:
 		p.Name, p.Path = currentPwd()
 	case 1:
-		p.Name = strings.TrimSpace(c.Args().Get(0))
+		p.Name = strings.TrimSpace(params[0])
 		_, p.Path = currentPwd()
 	case 2:
-		p.Name = strings.TrimSpace(c.Args().Get(0))
-		p.Path = strings.TrimSpace(c.Args().Get(1))
+		p.Name = strings.TrimSpace(params[0])
+		p.Path = strings.TrimSpace(params[1])
 	default:
 		return errorf("invalid size of arguments")
 	}
@@ -56,7 +50,7 @@ func create(c *cli.Context) error {
 
 	}
 
-	if c.Bool("editor") {
+	if SafeBoolFlag(cmdParam, "editor") {
 		p, err = editProject(p)
 		if err != nil {
 			return err
@@ -67,7 +61,7 @@ func create(c *cli.Context) error {
 		return ErrNameRequired
 	}
 
-	if !c.Bool("no-validate") {
+	if !SafeBoolFlag(cmdParam, "no-validate") {
 		if p.Path == "" {
 			return ErrPathRequired
 		}
@@ -76,7 +70,7 @@ func create(c *cli.Context) error {
 		}
 	}
 
-	projects, err := Load(settings)
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
@@ -86,20 +80,20 @@ func create(c *cli.Context) error {
 	}
 
 	projects = append(projects, *p)
-	if err := projects.Save(settings); err != nil {
+	if err := projects.Save(LoadSettings()); err != nil {
 		return err
 	}
 	log("Add project: '%s' path: '%s'", p.Name, p.Path)
 	return nil
 }
 
-func delete(c *cli.Context) error {
-	name := strings.TrimSpace(c.Args().First())
+func delete(cmdParam *cobra.Command, params []string) error {
+	name, _ := safeName(params...)
 	if name == "" {
 		return ErrNameRequired
 	}
 
-	projects, err := Load(settings)
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
@@ -120,11 +114,11 @@ func delete(c *cli.Context) error {
 
 	log("Project '%s' removed successfully!", name)
 	projects = aux
-	return projects.Save(settings)
+	return projects.Save(LoadSettings())
 }
 
-func list(c *cli.Context) error {
-	projects, err := Load(settings)
+func list(cmdParam *cobra.Command, params []string) error {
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return errorf("error on load file: %v", err)
 	}
@@ -137,8 +131,8 @@ func list(c *cli.Context) error {
 	tmpl := template.Must(template.New("editor").Parse(t))
 	ctx := map[string]interface{}{
 		"Projects":  projects,
-		"Path":      c.Bool("path"),
-		"ExtraInfo": !c.Bool("simple"),
+		"Path":      SafeBoolFlag(cmdParam, "path"),
+		"ExtraInfo": !SafeBoolFlag(cmdParam, "simple"),
 	}
 	err = tmpl.Execute(os.Stdout, ctx)
 	if err != nil {
@@ -147,13 +141,13 @@ func list(c *cli.Context) error {
 	return nil
 }
 
-func update(c *cli.Context) error {
-	name := strings.TrimSpace(c.Args().First())
+func update(cmdParam *cobra.Command, params []string) error {
+	name, _ := safeName(params...)
 	if name == "" {
 		return ErrNameRequired
 	}
 
-	projects, err := Load(settings)
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
@@ -174,7 +168,7 @@ func update(c *cli.Context) error {
 	if edited.Name == "" {
 		return ErrNameRequired
 	}
-	if !c.Bool("no-validate") {
+	if !SafeBoolFlag(cmdParam, "no-validate") {
 		if edited.Path == "" {
 			return ErrPathRequired
 		}
@@ -184,16 +178,16 @@ func update(c *cli.Context) error {
 	}
 
 	projects[index] = *edited
-	return projects.Save(settings)
+	return projects.Save(LoadSettings())
 }
 
-func path(c *cli.Context) error {
-	name := strings.TrimSpace(c.Args().First())
+func path(cmdParam *cobra.Command, params []string) error {
+	name, _ := safeName(params...)
 	if name == "" {
 		return ErrNameRequired
 	}
 
-	projects, err := Load(settings)
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
@@ -214,13 +208,13 @@ func path(c *cli.Context) error {
 	return nil
 }
 
-func export(c *cli.Context) error {
-	projects, err := Load(settings)
+func export(cmdParam *cobra.Command, params []string) error {
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
 
-	format := strings.TrimSpace(c.String("format"))
+	format := strings.TrimSpace(SafeStringFlag(cmdParam, "format"))
 	if len(format) == 0 {
 		return fmt.Errorf("Expected format (nerdtree|vimcommand|vim-project|aliases)")
 	}
@@ -249,7 +243,7 @@ command! %s call %s()`, title, p.Path, title, title)
 		}
 	}
 
-	if c.Bool("override") {
+	if SafeBoolFlag(cmdParam, "override") {
 		filename := os.Getenv("HOME")
 		switch format {
 		case "vimcommand":
@@ -269,13 +263,13 @@ command! %s call %s()`, title, p.Path, title, title)
 	return nil
 }
 
-func open(c *cli.Context) error {
-	projects, err := Load(settings)
+func open(cmdParam *cobra.Command, params []string) error {
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
 
-	p, _ := projects.Find(safeName(c.Args().First()))
+	p, _ := projects.Find(safeName(params...))
 	if p == nil {
 		return errorf("project not found")
 	}
@@ -300,15 +294,15 @@ func open(c *cli.Context) error {
 	if !hasSession {
 		cmd := exec.Command("tmux", "new", "-s", p.Name, "-n", p.Name, "-c", p.Path, "-d")
 		out, err := cmd.CombinedOutput()
-		logDebug(c.Bool("debug"), "new-session return: %v", string(out))
+		logDebug(SafeBoolFlag(cmdParam, "debug"), "new-session return: %v", string(out))
 		if err != nil {
 			return errorf("error on new-session: %v", err)
 		}
-		if c.Bool("vim") {
+		if SafeBoolFlag(cmdParam, "vim") {
 			//args  = append(args, []string{"\\;", "new-window", "-n", "vim"}...)
 			cmd := exec.Command("tmux", "new-window", "-n", "vim", "vim")
 			out, err := cmd.CombinedOutput()
-			logDebug(c.Bool("debug"), "new-window return: %v", string(out))
+			logDebug(SafeBoolFlag(cmdParam, "debug"), "new-window return: %v", string(out))
 			if err != nil {
 				return errorf("error on new-window: %v", err)
 			}
@@ -316,7 +310,7 @@ func open(c *cli.Context) error {
 	}
 
 	args := []string{"attach"}
-	if !c.Bool("d") {
+	if !SafeBoolFlag(cmdParam, "d") {
 		args = append(args, "-d")
 	}
 	args = append(args, []string{"-t", p.Name}...)
@@ -326,17 +320,17 @@ func open(c *cli.Context) error {
 	if err != nil {
 		return errorf("error on attach: %v", err)
 	}
-	logDebug(c.Bool("debug"), "attch return: %v", string(out))
+	logDebug(SafeBoolFlag(cmdParam, "debug"), "attch return: %v", string(out))
 	return nil
 }
 
-func code(c *cli.Context) error {
-	projects, err := Load(settings)
+func code(cmdParam *cobra.Command, params []string) error {
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
 
-	p, _ := projects.Find(safeName(c.Args().First()))
+	p, _ := projects.Find(safeName(params...))
 	if p == nil {
 		return errorf("project not found")
 
@@ -351,11 +345,11 @@ func code(c *cli.Context) error {
 	editor := "code"
 	args := make([]string, 0)
 
-	if edit := c.String("e"); edit != "" {
+	if edit := SafeStringFlag(cmdParam, "e"); edit != "" {
 		editor = edit
 	} else {
 		pos := "--new-window"
-		if c.Bool("r") {
+		if SafeBoolFlag(cmdParam, "r") {
 			pos = "--reuse-window"
 		}
 		args = append(args, pos)
@@ -369,15 +363,15 @@ func code(c *cli.Context) error {
 	return cmd.Run()
 }
 
-func close(c *cli.Context) error {
-	projects, err := Load(settings)
+func close(cmdParam *cobra.Command, params []string) error {
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return errorf("error on load file: %v", err)
 	}
 
 	toClose := make([]string, 0, 0)
 
-	if c.Bool("all") {
+	if SafeBoolFlag(cmdParam, "all") {
 		for _, p := range projects {
 			if p.Opened {
 				toClose = append(toClose, p.Name)
@@ -387,7 +381,7 @@ func close(c *cli.Context) error {
 			return errorf("no projects to close")
 		}
 	} else {
-		name := strings.TrimSpace(c.Args().First())
+		name, _ := safeName(params...)
 		if name == "" && os.Getenv("TMUX") != "" {
 			cmd := exec.Command("tmux", "display-message", "-p", "#S")
 			out, err := cmd.CombinedOutput()
@@ -406,7 +400,7 @@ func close(c *cli.Context) error {
 
 	for _, name := range toClose {
 		args := []string{"detach-client", "-s", name}
-		if c.Bool("kill") {
+		if SafeBoolFlag(cmdParam, "kill") {
 			log("kill opened project %s", name)
 			args = []string{"kill-session", "-t", name}
 		}
@@ -419,13 +413,13 @@ func close(c *cli.Context) error {
 	return nil
 }
 
-func scm(c *cli.Context) error {
-	projects, err := Load(settings)
+func scm(cmdParam *cobra.Command, params []string) error {
+	projects, err := Load(LoadSettings())
 	if err != nil {
 		return err
 	}
 
-	p, index := projects.Find(safeName(c.Args().First()))
+	p, index := projects.Find(safeName(params...))
 	if p == nil {
 		return errorf("project not found")
 	}
@@ -438,20 +432,22 @@ func scm(c *cli.Context) error {
 
 	log("using path: %s", p.Path)
 
-	if c.Bool("set") {
-		url := c.Args().Get(1)
-		if url == "" {
+	if SafeBoolFlag(cmdParam, "set") {
+		var url string
+		if len(params) <= 1 {
 			cmd := exec.Command("git", "-C", p.Path, "remote", "get-url", "origin")
 			out, err := cmd.CombinedOutput()
 			if err != nil {
 				return err
 			}
 			url = strings.TrimSpace(string(out))
+		} else {
+			url = params[1]
 		}
 		log("setting scm url %s", url)
 		p.SCM = url
 		projects[index] = *p
-		return projects.Save(settings)
+		return projects.Save(LoadSettings())
 	}
 
 	return nil
