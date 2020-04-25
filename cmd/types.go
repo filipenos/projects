@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"encoding/json"
@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
-	configPath      = fmt.Sprintf("%s/.projects.config.yaml", os.Getenv("HOME"))
 	projectsPath    = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
 	defaultSettings = Settings{ProjectLocation: projectsPath, Editor: "code"}
 )
@@ -138,25 +138,19 @@ func Load(s Settings) (Projects, error) {
 
 //LoadSettings load configuration used on projects
 func LoadSettings() Settings {
-	var (
-		settings Settings
-		v        = viper.New()
-	)
-
-	v.SetConfigFile(configPath)
-	if _, err := os.Stat(v.ConfigFileUsed()); os.IsNotExist(err) {
-		v.SetDefault("projectlocation", defaultSettings.ProjectLocation)
-		v.SetDefault("editor", defaultSettings.Editor)
-	} else {
-		if err := v.ReadInConfig(); err != nil {
-			settings = defaultSettings
-		}
-		if err := v.Unmarshal(&settings); err != nil {
-			settings = defaultSettings
-		}
-	}
-	if err := v.WriteConfig(); err != nil {
+	var settings Settings
+	if err := viper.Unmarshal(&settings); err != nil {
 		settings = defaultSettings
 	}
 	return settings
+}
+
+func SafeBoolFlag(cmd *cobra.Command, flagName string) bool {
+	v, _ := cmd.Flags().GetBool(flagName)
+	return v
+}
+
+func SafeStringFlag(cmd *cobra.Command, flagName string) string {
+	v, _ := cmd.Flags().GetString(flagName)
+	return v
 }

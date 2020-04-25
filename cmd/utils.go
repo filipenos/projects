@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -76,12 +76,16 @@ func getSessions() (map[string]bool, error) {
 }
 
 //safeName return the name or find from pwd
-func safeName(name string) (string, string) {
-	name = strings.TrimSpace(name)
+func safeName(args ...string) (string, string) {
+	if len(args) == 0 {
+		return currentPwd()
+	}
+	name := strings.TrimSpace(args[0])
 	if name != "" {
 		return name, ""
 	}
 	return currentPwd()
+
 }
 
 //currentPwd return the current path and last path of dir
