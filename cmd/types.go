@@ -142,6 +142,9 @@ func LoadSettings() Settings {
 	if err := viper.Unmarshal(&settings); err != nil {
 		settings = defaultSettings
 	}
+	if settings == (Settings{}) {
+		settings = defaultSettings
+	}
 	return settings
 }
 
