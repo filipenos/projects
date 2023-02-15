@@ -1,6 +1,6 @@
 module github.com/filipenos/projects
 
-go 1.13
+go 1.16
 
 require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
