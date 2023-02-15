@@ -16,13 +16,13 @@ var (
 	defaultSettings = Settings{ProjectLocation: projectsPath, Editor: "code"}
 )
 
-//Settings save configuration
+// Settings save configuration
 type Settings struct {
 	ProjectLocation string
 	Editor          string
 }
 
-//Project represent then project
+// Project represent then project
 type Project struct {
 	Name    string   `json:"name,omitempty"`
 	Alias   string   `json:"alias,omitempty"`
@@ -95,7 +95,7 @@ func (projects Projects) Find(name, path string) (*Project, int) {
 	return nil, -1
 }
 
-//Save save the current projects on conf file
+// Save save the current projects on conf file
 func (projects Projects) Save(s Settings) error {
 	b, err := json.MarshalIndent(projects, " ", "  ")
 	if err != nil {
@@ -104,7 +104,7 @@ func (projects Projects) Save(s Settings) error {
 	return ioutil.WriteFile(s.ProjectLocation, b, 0644)
 }
 
-//Load retrieve projects from config file
+// Load retrieve projects from config file
 func Load(s Settings) (Projects, error) {
 	file, err := os.Open(s.ProjectLocation)
 	if err != nil {
@@ -120,23 +120,14 @@ func Load(s Settings) (Projects, error) {
 		return nil, err
 	}
 
-	sessions, err := getSessions()
-	if err != nil {
-		return nil, errorf("error on get tmux sessions: %v", err)
-	}
 	for i, p := range projects {
-		attached, ok := sessions[p.Name]
-		if ok {
-			projects[i].Opened = true
-			projects[i].Attached = attached
-		}
 		projects[i].ValidPath = isExist(p.Path)
 	}
 
 	return projects, nil
 }
 
-//LoadSettings load configuration used on projects
+// LoadSettings load configuration used on projects
 func LoadSettings() Settings {
 	var settings Settings
 	if err := viper.Unmarshal(&settings); err != nil {

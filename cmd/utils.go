@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"text/template"
 )
@@ -33,49 +32,7 @@ func errorf(msg string, args ...interface{}) error {
 	return fmt.Errorf("%s", fmt.Sprintf(msg, args...))
 }
 
-func tmux(args ...string) (string, error) {
-	cmd := exec.Command("tmux", args...)
-	out, err := cmd.CombinedOutput()
-	return strings.TrimSpace(string(out)), err
-}
-
-func startServer() error {
-	_, err := tmux("start-server")
-	if err != nil {
-		return errorf("error on start server: %v", err)
-	}
-	return nil
-}
-
-func getSessions() (map[string]bool, error) {
-	m := make(map[string]bool, 0)
-
-	if err := startServer(); err != nil {
-		return m, errorf("error on start server: %v", err)
-	}
-
-	out, err := tmux("list-sessions")
-	if err != nil && !strings.Contains(out, "no server running") {
-		return m, err
-	}
-	for _, l := range strings.Split(out, "\n") {
-		l = strings.TrimSpace(l)
-		if len(l) == 0 {
-			continue
-		}
-		p := strings.Split(l, ":")
-		if len(p) == 0 {
-			log("%v", p)
-			continue
-		}
-		name := strings.TrimSpace(p[0])
-		m[name] = strings.Contains(strings.Join(p[1:], ""), "attached")
-	}
-
-	return m, nil
-}
-
-//safeName return the name or find from pwd
+// safeName return the name or find from pwd
 func safeName(args ...string) (string, string) {
 	if len(args) == 0 {
 		return currentPwd()
@@ -88,7 +45,7 @@ func safeName(args ...string) (string, string) {
 
 }
 
-//currentPwd return the current path and last path of dir
+// currentPwd return the current path and last path of dir
 func currentPwd() (string, string) {
 	pwd := os.Getenv("PWD")
 	paths := strings.Split(pwd, "/")
