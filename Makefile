@@ -5,6 +5,8 @@ LDFLAGS:="-X github.com/filipenos/projects/cmd.Version=${VERSION} -X github.com/
 clean:
 	rm -rf projects
 
+install:
+	go install -ldflags=${LDFLAGS}
 
-build: clean
+build:
 	go build -ldflags=${LDFLAGS}
