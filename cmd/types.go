@@ -3,12 +3,17 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+)
+
+var (
+	ErrNameRequired = errorf("name is required")
+	ErrPathRequired = errorf("path is required")
+	ErrPathNoExist  = errorf("path is no exists")
 )
 
 var (
@@ -101,7 +106,7 @@ func (projects Projects) Save(s Settings) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(s.ProjectLocation, b, 0644)
+	return os.WriteFile(s.ProjectLocation, b, 0644)
 }
 
 // Load retrieve projects from config file
