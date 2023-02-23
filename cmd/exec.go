@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -48,6 +49,15 @@ func execCmd(cmdParam *cobra.Command, params []string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	fmt.Println("PID", cmd.Process.Pid)
+	go func() {
+		err = cmd.Wait()
+		fmt.Printf("Command finished with error: %v", err)
+	}()
+
+	return nil
 
 }
