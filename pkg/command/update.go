@@ -1,6 +1,11 @@
-package cmd
+package command
 
 import (
+	"fmt"
+
+	"github.com/filipenos/projects/pkg/config"
+	"github.com/filipenos/projects/pkg/path"
+	"github.com/filipenos/projects/pkg/project"
 	"github.com/spf13/cobra"
 )
 
@@ -16,41 +21,41 @@ var updateCmd = &cobra.Command{
 }
 
 func update(cmdParam *cobra.Command, params []string) error {
-	name, _ := safeName(params...)
+	name, _ := path.SafeName(params...)
 	if name == "" {
-		return ErrNameRequired
+		return project.ErrNameRequired
 	}
 
-	projects, err := Load(LoadSettings())
+	projects, err := project.Load(config.Load())
 	if err != nil {
 		return err
 	}
 
 	_, index := projects.Get(name)
 	if index == -1 {
-		return errorf("project '%s' not found", name)
+		return fmt.Errorf("project '%s' not found", name)
 	}
 	p := &projects[index]
 	if p == nil {
-		return errorf("project '%s' not found", name)
+		return fmt.Errorf("project '%s' not found", name)
 	}
 
-	edited, err := editProject(p)
+	edited, err := project.EditProject(p)
 	if err != nil {
 		return err
 	}
 	if edited.Name == "" {
-		return ErrNameRequired
+		return project.ErrNameRequired
 	}
 	if !SafeBoolFlag(cmdParam, "no-validate") {
 		if edited.Path == "" {
-			return ErrPathRequired
+			return project.ErrPathRequired
 		}
-		if !isExist(edited.Path) {
-			return ErrPathNoExist
+		if !path.Exist(edited.Path) {
+			return project.ErrPathNoExist
 		}
 	}
 
 	projects[index] = *edited
-	return projects.Save(LoadSettings())
+	return projects.Save(config.Load())
 }

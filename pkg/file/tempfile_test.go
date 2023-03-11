@@ -1,6 +1,10 @@
-package cmd
+package file
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/filipenos/projects/pkg/path"
+)
 
 func TestNewTempFile(t *testing.T) {
 
@@ -28,7 +32,7 @@ func TestNewTempFile(t *testing.T) {
 	name := f.Name()
 	t.Logf("Created file %s", name)
 
-	if !isExist(name) {
+	if !path.Exist(name) {
 		t.Errorf("Temp file not exists")
 	}
 
@@ -44,7 +48,7 @@ func TestNewTempFile(t *testing.T) {
 		t.Fatalf("Unexpected error on remove temp file: %v", err)
 	}
 
-	if isExist(name) {
+	if path.Exist(name) {
 		t.Fatalf("Temp file exist, no removed")
 	}
 }

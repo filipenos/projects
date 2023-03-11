@@ -1,4 +1,4 @@
-package cmd
+package file
 
 import (
 	"os"
@@ -31,7 +31,7 @@ func (f *TempFile) Remove() error {
 
 // ReadFromUser show editor to user
 func (f *TempFile) ReadFromUser() error {
-	cmd := exec.Command("editor", f.Name())
+	cmd := exec.Command("vim", f.Name())
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

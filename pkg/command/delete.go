@@ -1,6 +1,12 @@
-package cmd
+package command
 
 import (
+	"fmt"
+
+	"github.com/filipenos/projects/pkg/config"
+	"github.com/filipenos/projects/pkg/log"
+	"github.com/filipenos/projects/pkg/path"
+	"github.com/filipenos/projects/pkg/project"
 	"github.com/spf13/cobra"
 )
 
@@ -16,18 +22,18 @@ var deleteCmd = &cobra.Command{
 }
 
 func delete(cmdParam *cobra.Command, params []string) error {
-	name, _ := safeName(params...)
+	name, _ := path.SafeName(params...)
 	if name == "" {
-		return ErrNameRequired
+		return project.ErrNameRequired
 	}
 
-	projects, err := Load(LoadSettings())
+	projects, err := project.Load(config.Load())
 	if err != nil {
 		return err
 	}
 
 	excluded := false
-	aux := make([]Project, 0, len(projects))
+	aux := make([]project.Project, 0, len(projects))
 	for i := range projects {
 		if projects[i].Name == name && !excluded {
 			excluded = true
@@ -37,10 +43,11 @@ func delete(cmdParam *cobra.Command, params []string) error {
 	}
 
 	if !excluded {
-		return errorf("Project '%s' not found", name)
+		return fmt.Errorf("project '%s' not found", name)
 	}
 
-	log("Project '%s' removed successfully!", name)
+	log.Infof("Project '%s' removed successfully!", name)
+
 	projects = aux
-	return projects.Save(LoadSettings())
+	return projects.Save(config.Load())
 }

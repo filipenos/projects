@@ -1,4 +1,4 @@
-package cmd
+package command
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//Version, Commit This variables is filled on build time
+// Version, Commit This variables is filled on build time
 var (
 	Version string
 	Commit  string

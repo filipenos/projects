@@ -1,18 +1,15 @@
-package cmd
+package command
 
 import (
+	"fmt"
 	"os"
 	"sort"
 	"text/template"
 
+	"github.com/filipenos/projects/pkg/config"
+	"github.com/filipenos/projects/pkg/project"
 	"github.com/spf13/cobra"
 )
-
-func init() {
-	rootCmd.AddCommand(listCmd)
-	codeCmd.Flags().BoolP("path", "p", false, "Reuse same window")
-	codeCmd.Flags().BoolP("simple", "s", false, "Reuse same window")
-}
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -22,10 +19,17 @@ var listCmd = &cobra.Command{
 	RunE:    list,
 }
 
+func init() {
+	listCmd.Flags().BoolP("path", "p", false, "Reuse same window")
+	listCmd.Flags().BoolP("simple", "s", false, "Reuse same window")
+
+	rootCmd.AddCommand(listCmd)
+}
+
 func list(cmdParam *cobra.Command, params []string) error {
-	projects, err := Load(LoadSettings())
+	projects, err := project.Load(config.Load())
 	if err != nil {
-		return errorf("error on load file: %v", err)
+		return fmt.Errorf("error on load file: %v", err)
 	}
 	sort.Sort(projects)
 
@@ -41,7 +45,7 @@ func list(cmdParam *cobra.Command, params []string) error {
 	}
 	err = tmpl.Execute(os.Stdout, ctx)
 	if err != nil {
-		return errorf("error on execute template: %v", err)
+		return fmt.Errorf("error on execute template: %v", err)
 	}
 	return nil
 }

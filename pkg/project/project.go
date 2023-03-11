@@ -1,31 +1,22 @@
-package cmd
+package project
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
+	"text/template"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"github.com/filipenos/projects/pkg/config"
+	"github.com/filipenos/projects/pkg/file"
+	"github.com/filipenos/projects/pkg/path"
 )
 
 var (
-	ErrNameRequired = errorf("name is required")
-	ErrPathRequired = errorf("path is required")
-	ErrPathNoExist  = errorf("path is no exists")
+	ErrNameRequired = fmt.Errorf("name is required")
+	ErrPathRequired = fmt.Errorf("path is required")
+	ErrPathNoExist  = fmt.Errorf("path is no exists")
 )
-
-var (
-	projectsPath    = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
-	defaultSettings = Settings{ProjectLocation: projectsPath, Editor: "code"}
-)
-
-// Settings save configuration
-type Settings struct {
-	ProjectLocation string
-	Editor          string
-}
 
 // Project represent then project
 type Project struct {
@@ -101,7 +92,7 @@ func (projects Projects) Find(name, path string) (*Project, int) {
 }
 
 // Save save the current projects on conf file
-func (projects Projects) Save(s Settings) error {
+func (projects Projects) Save(s config.Config) error {
 	b, err := json.MarshalIndent(projects, " ", "  ")
 	if err != nil {
 		return err
@@ -110,7 +101,7 @@ func (projects Projects) Save(s Settings) error {
 }
 
 // Load retrieve projects from config file
-func Load(s Settings) (Projects, error) {
+func Load(s config.Config) (Projects, error) {
 	file, err := os.Open(s.ProjectLocation)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -126,30 +117,62 @@ func Load(s Settings) (Projects, error) {
 	}
 
 	for i, p := range projects {
-		projects[i].ValidPath = isExist(p.Path)
+		projects[i].ValidPath = path.Exist(p.Path)
 	}
 
 	return projects, nil
 }
 
-// LoadSettings load configuration used on projects
-func LoadSettings() Settings {
-	var settings Settings
-	if err := viper.Unmarshal(&settings); err != nil {
-		settings = defaultSettings
+func EditProject(p *Project) (*Project, error) {
+	tmp, err := file.NewTempFile()
+	if err != nil {
+		return nil, err
 	}
-	if settings == (Settings{}) {
-		settings = defaultSettings
+	defer tmp.Remove()
+
+	d := `name={{.Name}}
+path={{.Path}}
+group={{.Group}}
+enabled={{.Enabled}}`
+
+	tmpl := template.Must(template.New("editor").Parse(d))
+	if err := tmpl.Execute(tmp, p); err != nil {
+		return nil, err
 	}
-	return settings
+
+	tmp.ReadFromUser()
+
+	if err := tmp.Close(); err != nil {
+		return nil, err
+	}
+
+	content, err := tmp.GetContent()
+	if err != nil {
+		return nil, err
+	}
+	return ParseContent(content), nil
 }
 
-func SafeBoolFlag(cmd *cobra.Command, flagName string) bool {
-	v, _ := cmd.Flags().GetBool(flagName)
-	return v
-}
-
-func SafeStringFlag(cmd *cobra.Command, flagName string) string {
-	v, _ := cmd.Flags().GetString(flagName)
-	return v
+func ParseContent(data []byte) *Project {
+	lines := strings.Split(string(data), "\n")
+	p := &Project{}
+	for i := range lines {
+		line := strings.TrimSpace(lines[i])
+		values := strings.Split(line, "=")
+		if len(values) != 2 {
+			continue
+		}
+		v := strings.TrimSpace(values[1])
+		switch values[0] {
+		case "name":
+			p.Name = v
+		case "path":
+			p.Path = v
+		case "group":
+			p.Group = v
+		case "enabled":
+			p.Enabled = v == "true"
+		}
+	}
+	return p
 }
