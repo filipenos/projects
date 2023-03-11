@@ -55,5 +55,6 @@ func execCmd(cmdParam *cobra.Command, params []string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	cmd.Run()
+	return nil
 }
