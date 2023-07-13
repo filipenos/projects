@@ -17,6 +17,7 @@ type ProjectType string
 const (
 	ProjectTypeLocal ProjectType = "local"
 	ProjectTypeSSH   ProjectType = "ssh"
+	ProjectTypeWSL   ProjectType = "wsl"
 )
 
 var (
@@ -130,6 +131,9 @@ func Load(s config.Config) (Projects, error) {
 		}
 		if strings.Contains(p.Path, "ssh") {
 			projects[i].ProjectType = ProjectTypeSSH
+			projects[i].ValidPath = true
+		} else if strings.Contains(p.Path, "wsl") {
+			projects[i].ProjectType = ProjectTypeWSL
 			projects[i].ValidPath = true
 		} else {
 			projects[i].ProjectType = ProjectTypeLocal
