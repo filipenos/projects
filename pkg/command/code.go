@@ -37,17 +37,8 @@ func code(cmdParam *cobra.Command, params []string) error {
 		return fmt.Errorf("project not found")
 
 	}
-	if p.Path == "" {
-		return fmt.Errorf("project '%s' dont have path", p.Name)
-	}
-	switch p.ProjectType {
-	case project.ProjectTypeLocal:
-		if !path.Exist(p.Path) {
-			return fmt.Errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
-		}
-	case project.ProjectTypeSSH, project.ProjectTypeWSL:
-	default:
-		return fmt.Errorf("invalid project type: %s", p.ProjectType)
+	if err := p.Validate(); err != nil {
+		return err
 	}
 
 	editor := "code"
