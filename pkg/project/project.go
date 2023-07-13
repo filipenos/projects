@@ -42,6 +42,25 @@ type Project struct {
 	ValidPath   bool        `json:"-"`
 }
 
+func (p *Project) Validate() error {
+	if p.Name == "" {
+		return ErrNameRequired
+	}
+	if p.Path == "" {
+		return fmt.Errorf("project '%s' dont have path", p.Name)
+	}
+	switch p.ProjectType {
+	case ProjectTypeLocal:
+		if !path.Exist(p.Path) {
+			return fmt.Errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
+		}
+	case ProjectTypeSSH, ProjectTypeWSL:
+	default:
+		return fmt.Errorf("invalid project type: %s", p.ProjectType)
+	}
+	return nil
+}
+
 type Projects []Project
 
 func (projects Projects) Len() int           { return len(projects) }
