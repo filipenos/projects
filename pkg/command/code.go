@@ -40,8 +40,14 @@ func code(cmdParam *cobra.Command, params []string) error {
 	if p.Path == "" {
 		return fmt.Errorf("project '%s' dont have path", p.Name)
 	}
-	if !path.Exist(p.Path) {
-		return fmt.Errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
+	switch p.ProjectType {
+	case project.ProjectTypeLocal:
+		if !path.Exist(p.Path) {
+			return fmt.Errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
+		}
+	case project.ProjectTypeSSH:
+	default:
+		return fmt.Errorf("invalid project type: %s", p.ProjectType)
 	}
 
 	editor := "code"
@@ -56,6 +62,7 @@ func code(cmdParam *cobra.Command, params []string) error {
 		}
 		args = append(args, pos)
 	}
+	args = append(args, "--folder-uri")
 	args = append(args, p.Path)
 
 	log.Infof("open path '%s' on '%s'", p.Path, editor)

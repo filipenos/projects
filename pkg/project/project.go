@@ -12,6 +12,13 @@ import (
 	"github.com/filipenos/projects/pkg/path"
 )
 
+type ProjectType string
+
+const (
+	ProjectTypeLocal ProjectType = "local"
+	ProjectTypeSSH   ProjectType = "ssh"
+)
+
 var (
 	ErrNameRequired = fmt.Errorf("name is required")
 	ErrPathRequired = fmt.Errorf("path is required")
@@ -28,9 +35,10 @@ type Project struct {
 	SCM     string   `json:"scm,omitempty"`
 	Tags    []string `json:"tags,omitempty"`
 
-	Opened    bool `json:"-"`
-	Attached  bool `json:"-"`
-	ValidPath bool `json:"-"`
+	ProjectType ProjectType `json:"-"`
+	Opened      bool        `json:"-"`
+	Attached    bool        `json:"-"`
+	ValidPath   bool        `json:"-"`
 }
 
 type Projects []Project
@@ -117,7 +125,17 @@ func Load(s config.Config) (Projects, error) {
 	}
 
 	for i, p := range projects {
-		projects[i].ValidPath = path.Exist(p.Path)
+		if strings.Contains(p.Path, "~") {
+			projects[i].Path = strings.Replace(p.Path, "~", os.Getenv("HOME"), 1)
+		}
+		if strings.Contains(p.Path, "ssh") {
+			projects[i].ProjectType = ProjectTypeSSH
+			projects[i].ValidPath = true
+		} else {
+			projects[i].ProjectType = ProjectTypeLocal
+			projects[i].ValidPath = path.Exist(p.Path)
+		}
+
 	}
 
 	return projects, nil
