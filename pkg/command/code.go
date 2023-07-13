@@ -45,7 +45,7 @@ func code(cmdParam *cobra.Command, params []string) error {
 		if !path.Exist(p.Path) {
 			return fmt.Errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
 		}
-	case project.ProjectTypeSSH:
+	case project.ProjectTypeSSH, project.ProjectTypeWSL:
 	default:
 		return fmt.Errorf("invalid project type: %s", p.ProjectType)
 	}
