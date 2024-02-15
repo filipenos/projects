@@ -41,8 +41,6 @@ func execCmd(cmdParam *cobra.Command, params []string) error {
 		return fmt.Errorf("required at least one argument")
 	}
 
-	//vscode-remote://ssh-remote+filipe-pc/home/filipe/Code/Digipix/papirus
-
 	var (
 		toExec = params[1]
 		args   []string

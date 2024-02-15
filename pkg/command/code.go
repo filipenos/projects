@@ -53,10 +53,16 @@ func code(cmdParam *cobra.Command, params []string) error {
 		}
 		args = append(args, pos)
 	}
-	args = append(args, "--folder-uri")
+	openType := "folder"
+	if p.IsWorkspace && p.ProjectType == project.ProjectTypeSSH {
+		args = append(args, "--file-uri")
+		openType = "file"
+	} else {
+		args = append(args, "--folder-uri")
+	}
 	args = append(args, p.Path)
 
-	log.Infof("open path '%s' on '%s'", p.Path, editor)
+	log.Infof("open %s '%s' on '%s'", openType, p.Path, editor)
 
 	cmd := exec.Command(editor, args...)
 	cmd.Stdin = os.Stdin

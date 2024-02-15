@@ -33,7 +33,7 @@ func list(cmdParam *cobra.Command, params []string) error {
 	}
 	sort.Sort(projects)
 
-	t := `{{range .Projects}}{{.Name}}{{if $.ExtraInfo}} {{.ProjectType}} {{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if not .ValidPath}} (invalid-path){{end}}{{end}}{{if $.Path}}
+	t := `{{range .Projects}}{{.Name}}{{if $.ExtraInfo}} {{.ProjectType}} {{if .IsWorkspace}}(w){{end}} {{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if not .ValidPath}} (invalid-path){{end}}{{end}}{{if $.Path}}
   Path: {{.Path}}{{end}}
 {{else}}No projects yeat!
 {{end}}`

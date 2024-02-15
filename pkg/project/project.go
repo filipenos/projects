@@ -40,6 +40,7 @@ type Project struct {
 	Opened      bool        `json:"-"`
 	Attached    bool        `json:"-"`
 	ValidPath   bool        `json:"-"`
+	IsWorkspace bool        `json:"-"`
 }
 
 func (p *Project) Validate() error {
@@ -157,6 +158,9 @@ func Load(s config.Config) (Projects, error) {
 		} else {
 			projects[i].ProjectType = ProjectTypeLocal
 			projects[i].ValidPath = path.Exist(p.Path)
+		}
+		if strings.HasSuffix(p.Path, ".code-workspace") {
+			projects[i].IsWorkspace = true
 		}
 
 	}
