@@ -20,7 +20,7 @@ var codeCmd = &cobra.Command{
 }
 
 func init() {
-	codeCmd.Flags().StringP("editor", "e", "code", "Code using vscode editor")
+	codeCmd.Flags().StringP("editor", "e", "code", "Code using (code|zed|subl) editor")
 	codeCmd.Flags().BoolP("reuse", "r", false, "Reuse same window")
 
 	rootCmd.AddCommand(codeCmd)
@@ -44,22 +44,34 @@ func code(cmdParam *cobra.Command, params []string) error {
 	editor := "code"
 	args := make([]string, 0)
 
-	if edit := SafeStringFlag(cmdParam, "e"); edit != "" {
-		editor = edit
-	} else {
+	editor = SafeStringFlag(cmdParam, "editor")
+	reuse := SafeBoolFlag(cmdParam, "reuse")
+
+	openType := "folder"
+
+	switch editor {
+	case "code":
 		pos := "--new-window"
-		if SafeBoolFlag(cmdParam, "r") {
+		if reuse {
 			pos = "--reuse-window"
 		}
 		args = append(args, pos)
+
+		if p.IsWorkspace && p.ProjectType == project.ProjectTypeSSH {
+			args = append(args, "--file-uri")
+			openType = "file"
+		} else {
+			args = append(args, "--folder-uri")
+		}
+	case "subl", "sublime":
+		if !reuse {
+			args = append(args, "--new-window")
+		}
+	case "zed":
+	default:
+		return fmt.Errorf("editor not supported")
 	}
-	openType := "folder"
-	if p.IsWorkspace && p.ProjectType == project.ProjectTypeSSH {
-		args = append(args, "--file-uri")
-		openType = "file"
-	} else {
-		args = append(args, "--folder-uri")
-	}
+
 	args = append(args, p.Path)
 
 	log.Infof("open %s '%s' on '%s'", openType, p.Path, editor)

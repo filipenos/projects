@@ -36,9 +36,6 @@ func update(cmdParam *cobra.Command, params []string) error {
 		return fmt.Errorf("project '%s' not found", name)
 	}
 	p := &projects[index]
-	if p == nil {
-		return fmt.Errorf("project '%s' not found", name)
-	}
 
 	edited, err := project.EditProject(p)
 	if err != nil {
