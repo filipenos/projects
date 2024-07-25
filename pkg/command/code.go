@@ -22,7 +22,7 @@ var codeCmd = &cobra.Command{
 
 func init() {
 	codeCmd.Flags().StringP("editor", "e", "code", "Code using (code|zed|subl) editor")
-	codeCmd.Flags().BoolP("reuse", "r", false, "Reuse same window")
+	codeCmd.Flags().StringP("window", "w", "new", "Window type (new|reuse|add)")
 
 	rootCmd.AddCommand(codeCmd)
 }
@@ -46,17 +46,21 @@ func code(cmdParam *cobra.Command, params []string) error {
 	args := make([]string, 0)
 
 	editor = SafeStringFlag(cmdParam, "editor")
-	reuse := SafeBoolFlag(cmdParam, "reuse")
+	window := SafeStringFlag(cmdParam, "window")
 
 	openType := "folder"
 
 	switch editor {
 	case "code":
-		pos := "--new-window"
-		if reuse {
-			pos = "--reuse-window"
+
+		switch window {
+		case "reuse":
+			args = append(args, "--reuse-window")
+		case "add":
+			args = append(args, "--add")
+		default:
+			args = append(args, "--new-window")
 		}
-		args = append(args, pos)
 
 		if p.IsWorkspace && p.ProjectType == project.ProjectTypeSSH {
 			args = append(args, "--file-uri")
@@ -70,9 +74,15 @@ func code(cmdParam *cobra.Command, params []string) error {
 		if p.ProjectType != project.ProjectTypeLocal {
 			return fmt.Errorf("sublime not support remote project")
 		}
-		if !reuse {
+
+		switch window {
+		case "new":
 			args = append(args, "--new-window")
+		case "add":
+			args = append(args, "--add")
+			//default reuse window
 		}
+
 		if p.IsWorkspace {
 			w, err := workspace.Load(p.Path)
 			if err != nil {
@@ -87,6 +97,13 @@ func code(cmdParam *cobra.Command, params []string) error {
 		if p.ProjectType != project.ProjectTypeLocal {
 			return fmt.Errorf("zed not support remote project")
 		}
+
+		switch window {
+		case "add":
+			args = append(args, "--add")
+			//default new window
+		}
+
 		if p.IsWorkspace {
 			w, err := workspace.Load(p.Path)
 			if err != nil {
