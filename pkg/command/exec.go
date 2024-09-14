@@ -49,14 +49,14 @@ func execCmd(cmdParam *cobra.Command, params []string) error {
 
 	switch p.ProjectType {
 	case project.ProjectTypeLocal:
-		path = p.Path
+		path = p.RootPath
 	case project.ProjectTypeSSH:
 		log.Infof("executing on ssh host, some features not working")
-		i := strings.Index(p.Path, "+")
+		i := strings.Index(p.RootPath, "+")
 		if i == -1 {
 			return fmt.Errorf("invalid path")
 		}
-		subPath := p.Path[i+1:]
+		subPath := p.RootPath[i+1:]
 		i = strings.Index(subPath, "/")
 		if i == -1 {
 			return fmt.Errorf("invalid path")

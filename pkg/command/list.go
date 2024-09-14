@@ -2,9 +2,7 @@ package command
 
 import (
 	"fmt"
-	"os"
 	"sort"
-	"text/template"
 
 	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/project"
@@ -33,19 +31,23 @@ func list(cmdParam *cobra.Command, params []string) error {
 	}
 	sort.Sort(projects)
 
-	t := `{{range .Projects}}{{.Name}}{{if $.ExtraInfo}} {{.ProjectType}} {{if .IsWorkspace}}(w){{end}} {{if .Opened}} (opened){{end}}{{if .Attached}} (attached){{end}}{{if not .ValidPath}} (invalid-path){{end}}{{end}}{{if $.Path}}
-  Path: {{.Path}}{{end}}
-{{else}}No projects yeat!
-{{end}}`
-	tmpl := template.Must(template.New("editor").Parse(t))
-	ctx := map[string]interface{}{
-		"Projects":  projects,
-		"Path":      SafeBoolFlag(cmdParam, "path"),
-		"ExtraInfo": !SafeBoolFlag(cmdParam, "simple"),
+	for _, p := range projects {
+		print := p.Name
+		print += " " + string(p.ProjectType)
+		if p.IsWorkspace {
+			print += " (w)"
+		}
+		if p.Opened {
+			print += " (opened)"
+		}
+		if p.Attached {
+			print += " (attached)"
+		}
+		if !p.ValidPath {
+			print += " (invalid-path)"
+		}
+		fmt.Println(print)
 	}
-	err = tmpl.Execute(os.Stdout, ctx)
-	if err != nil {
-		return fmt.Errorf("error on execute template: %v", err)
-	}
+
 	return nil
 }

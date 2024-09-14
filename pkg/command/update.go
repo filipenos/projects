@@ -45,10 +45,10 @@ func update(cmdParam *cobra.Command, params []string) error {
 		return project.ErrNameRequired
 	}
 	if !SafeBoolFlag(cmdParam, "no-validate") {
-		if edited.Path == "" {
+		if edited.RootPath == "" {
 			return project.ErrPathRequired
 		}
-		if !path.Exist(edited.Path) {
+		if !path.Exist(edited.RootPath) {
 			return project.ErrPathNoExist
 		}
 	}

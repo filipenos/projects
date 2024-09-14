@@ -29,19 +29,19 @@ func create(cmdParam *cobra.Command, params []string) error {
 
 	switch len(params) {
 	case 0:
-		p.Name, p.Path = path.CurrentPwd()
+		p.Name, p.RootPath = path.CurrentPwd()
 	case 1:
 		p.Name = strings.TrimSpace(params[0])
-		_, p.Path = path.CurrentPwd()
+		_, p.RootPath = path.CurrentPwd()
 	case 2:
 		p.Name = strings.TrimSpace(params[0])
-		p.Path = strings.TrimSpace(params[1])
+		p.RootPath = strings.TrimSpace(params[1])
 	default:
 		return fmt.Errorf("invalid size of arguments")
 	}
 
-	if p.Path != "" && path.Exist(fmt.Sprintf("%s/.git", p.Path)) {
-		cmd := exec.Command("git", "-C", p.Path, "remote", "get-url", "origin")
+	if p.RootPath != "" && path.Exist(fmt.Sprintf("%s/.git", p.RootPath)) {
+		cmd := exec.Command("git", "-C", p.RootPath, "remote", "get-url", "origin")
 		out, _ := cmd.CombinedOutput()
 		if scm := strings.TrimSpace(string(out)); scm != "" {
 			p.SCM = scm
@@ -61,10 +61,10 @@ func create(cmdParam *cobra.Command, params []string) error {
 	}
 
 	if !SafeBoolFlag(cmdParam, "no-validate") {
-		if p.Path == "" {
+		if p.RootPath == "" {
 			return project.ErrPathRequired
 		}
-		if !path.Exist(p.Path) {
+		if !path.Exist(p.RootPath) {
 			return project.ErrPathNoExist
 		}
 	}
@@ -82,7 +82,7 @@ func create(cmdParam *cobra.Command, params []string) error {
 	if err := projects.Save(config.Load()); err != nil {
 		return err
 	}
-	log.Infof("Add project: '%s' path: '%s'", p.Name, p.Path)
+	log.Infof("Add project: '%s' path: '%s'", p.Name, p.RootPath)
 
 	return nil
 }

@@ -39,6 +39,29 @@ func ParseProjectType(typ string) ProjectType {
 	return ProjectType(typ)
 }
 
+func parseURL(input string) (string, string, string) {
+	var scheme, domain, path string
+
+	// Separa o schema e o resto
+	if strings.Contains(input, "://") {
+		parts := strings.SplitN(input, "://", 2)
+		scheme = parts[0]
+		input = parts[1]
+	}
+
+	// Separa o domain e o path
+	if strings.Contains(input, "/") {
+		parts := strings.SplitN(input, "/", 2)
+		domain = parts[0]
+		path = "/" + parts[1]
+	} else {
+		domain = input
+		path = ""
+	}
+
+	return scheme, domain, path
+}
+
 var (
 	ErrNameRequired = fmt.Errorf("name is required")
 	ErrPathRequired = fmt.Errorf("path is required")
@@ -47,13 +70,17 @@ var (
 
 // Project represent then project
 type Project struct {
-	Name    string   `json:"name,omitempty"`
-	Alias   string   `json:"alias,omitempty"`
-	Path    string   `json:"rootPath,omitempty"`
-	Group   string   `json:"group,omitempty"`
-	Enabled bool     `json:"enabled,omitempty"`
-	SCM     string   `json:"scm,omitempty"`
-	Tags    []string `json:"tags,omitempty"`
+	Name     string   `json:"name,omitempty"`
+	Alias    string   `json:"alias,omitempty"`
+	RootPath string   `json:"rootPath,omitempty"`
+	Group    string   `json:"group,omitempty"`
+	Enabled  bool     `json:"enabled,omitempty"`
+	SCM      string   `json:"scm,omitempty"`
+	Tags     []string `json:"tags,omitempty"`
+
+	Scheme string `json:"-"`
+	Domain string `json:"-"`
+	Path   string `json:"-"`
 
 	ProjectType ProjectType `json:"-"`
 	Opened      bool        `json:"-"`
@@ -66,13 +93,13 @@ func (p *Project) Validate() error {
 	if p.Name == "" {
 		return ErrNameRequired
 	}
-	if p.Path == "" {
+	if p.RootPath == "" {
 		return fmt.Errorf("project '%s' dont have path", p.Name)
 	}
 	switch p.ProjectType {
 	case ProjectTypeLocal:
-		if !path.Exist(p.Path) {
-			return fmt.Errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
+		if !path.Exist(p.RootPath) {
+			return fmt.Errorf("path '%s' of project '%s' not exists", p.RootPath, p.Name)
 		}
 	case ProjectTypeSSH, ProjectTypeWSL, ProjectTypeTunnel:
 	default:
@@ -100,7 +127,7 @@ func (projects Projects) Get(name string) (*Project, int) {
 func (projects Projects) GetByPath(path string) (*Project, int) {
 	path = strings.TrimSpace(path)
 	for i := range projects {
-		if projects[i].Path == path {
+		if projects[i].RootPath == path {
 			return &projects[i], i
 		}
 	}
@@ -165,22 +192,20 @@ func Load(s config.Config) (Projects, error) {
 	}
 
 	for i, p := range projects {
-		if strings.Contains(p.Path, "~") {
-			projects[i].Path = strings.Replace(p.Path, "~", os.Getenv("HOME"), 1)
+		if strings.Contains(p.RootPath, "~") {
+			projects[i].RootPath = strings.Replace(p.RootPath, "~", os.Getenv("HOME"), 1)
 		}
 
-		prefix := "vscode-remote://"
-		if strings.LastIndex(p.Path, prefix) > -1 {
-			typ := strings.Split(p.Path[len(prefix):], "/")[0]
-
-			projects[i].ProjectType = ParseProjectType(typ)
+		projects[i].Scheme, projects[i].Domain, projects[i].Path = parseURL(p.RootPath)
+		if projects[i].Scheme != "" {
+			projects[i].ProjectType = ParseProjectType(projects[i].Domain)
 			projects[i].ValidPath = true
-
 		} else {
 			projects[i].ProjectType = ProjectTypeLocal
-			projects[i].ValidPath = path.Exist(p.Path)
+			projects[i].ValidPath = path.Exist(p.RootPath)
 		}
-		if strings.HasSuffix(p.Path, ".code-workspace") {
+
+		if strings.HasSuffix(p.RootPath, ".code-workspace") {
 			projects[i].IsWorkspace = true
 		}
 
@@ -233,7 +258,7 @@ func ParseContent(data []byte) *Project {
 		case "name":
 			p.Name = v
 		case "path":
-			p.Path = v
+			p.RootPath = v
 		case "group":
 			p.Group = v
 		case "enabled":

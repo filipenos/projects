@@ -21,7 +21,7 @@ var codeCmd = &cobra.Command{
 }
 
 func init() {
-	codeCmd.Flags().StringP("editor", "e", "code", "Code using (code|zed|subl) editor")
+	codeCmd.Flags().StringP("editor", "e", "code", "Code using (code|zed|subl|nvim) editor")
 	codeCmd.Flags().StringP("window", "w", "new", "Window type (new|reuse|add)")
 
 	rootCmd.AddCommand(codeCmd)
@@ -68,7 +68,7 @@ func code(cmdParam *cobra.Command, params []string) error {
 		} else {
 			args = append(args, "--folder-uri")
 		}
-		args = append(args, p.Path)
+		args = append(args, p.RootPath)
 
 	case "subl", "sublime":
 		if p.ProjectType != project.ProjectTypeLocal {
@@ -84,13 +84,13 @@ func code(cmdParam *cobra.Command, params []string) error {
 		}
 
 		if p.IsWorkspace {
-			w, err := workspace.Load(p.Path)
+			w, err := workspace.Load(p.RootPath)
 			if err != nil {
 				return err
 			}
 			args = append(args, w.FoldersPath()...)
 		} else {
-			args = append(args, p.Path)
+			args = append(args, p.RootPath)
 		}
 
 	case "zed":
@@ -105,22 +105,34 @@ func code(cmdParam *cobra.Command, params []string) error {
 		}
 
 		if p.IsWorkspace {
-			w, err := workspace.Load(p.Path)
+			w, err := workspace.Load(p.RootPath)
 			if err != nil {
 				return err
 			}
 			args = append(args, w.FoldersPath()...)
 		} else {
-			args = append(args, p.Path)
+			args = append(args, p.RootPath)
 		}
+
+	case "nvim":
+		switch p.ProjectType {
+		case project.ProjectTypeLocal, project.ProjectTypeWSL:
+		default:
+			return fmt.Errorf("project type %s not supported", p.ProjectType)
+		}
+
+		args = append(args, p.Path)
+
 	default:
 		return fmt.Errorf("editor not supported")
 	}
 
-	log.Infof("open %s '%s' on '%s'", openType, p.Path, editor)
+	log.Infof("open %s '%s' on '%s'", openType, p.RootPath, editor)
 
 	cmd := exec.Command(editor, args...)
 	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	return cmd.Run()
 
 }
