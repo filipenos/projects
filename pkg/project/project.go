@@ -15,10 +15,29 @@ import (
 type ProjectType string
 
 const (
-	ProjectTypeLocal ProjectType = "local"
-	ProjectTypeSSH   ProjectType = "ssh"
-	ProjectTypeWSL   ProjectType = "wsl"
+	ProjectTypeLocal  ProjectType = "local"
+	ProjectTypeSSH    ProjectType = "ssh"
+	ProjectTypeWSL    ProjectType = "wsl"
+	ProjectTypeTunnel ProjectType = "tunnel"
 )
+
+func ParseProjectType(typ string) ProjectType {
+	if i := strings.Index(typ, "+"); i > -1 {
+		switch typ[:i] {
+		case "wsl":
+			return ProjectTypeWSL
+		case "ssh":
+			return ProjectTypeSSH
+		case "ssh-remote":
+			return ProjectTypeSSH
+		case "tunnel":
+			return ProjectTypeTunnel
+		default:
+			return ProjectType(typ[:i])
+		}
+	}
+	return ProjectType(typ)
+}
 
 var (
 	ErrNameRequired = fmt.Errorf("name is required")
@@ -55,7 +74,7 @@ func (p *Project) Validate() error {
 		if !path.Exist(p.Path) {
 			return fmt.Errorf("path '%s' of project '%s' not exists", p.Path, p.Name)
 		}
-	case ProjectTypeSSH, ProjectTypeWSL:
+	case ProjectTypeSSH, ProjectTypeWSL, ProjectTypeTunnel:
 	default:
 		return fmt.Errorf("invalid project type: %s", p.ProjectType)
 	}
@@ -149,12 +168,14 @@ func Load(s config.Config) (Projects, error) {
 		if strings.Contains(p.Path, "~") {
 			projects[i].Path = strings.Replace(p.Path, "~", os.Getenv("HOME"), 1)
 		}
-		if strings.Contains(p.Path, "ssh") {
-			projects[i].ProjectType = ProjectTypeSSH
+
+		prefix := "vscode-remote://"
+		if strings.LastIndex(p.Path, prefix) > -1 {
+			typ := strings.Split(p.Path[len(prefix):], "/")[0]
+
+			projects[i].ProjectType = ParseProjectType(typ)
 			projects[i].ValidPath = true
-		} else if strings.Contains(p.Path, "wsl") {
-			projects[i].ProjectType = ProjectTypeWSL
-			projects[i].ValidPath = true
+
 		} else {
 			projects[i].ProjectType = ProjectTypeLocal
 			projects[i].ValidPath = path.Exist(p.Path)
