@@ -11,19 +11,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listCmd represents the list command
-var openCmd = &cobra.Command{
-	Use:     "open",
-	Aliases: []string{"nu", "n"},
-	Short:   "Open project in Nu Shell",
-	RunE:    nu,
+// shellCmd represents the list command
+var shellCmd = &cobra.Command{
+	Use:     "shell",
+	Aliases: []string{"sh", "nu", "n"},
+	Short:   "Open project using Shell",
+	RunE:    shell,
 }
 
 func init() {
-	rootCmd.AddCommand(openCmd)
+	rootCmd.AddCommand(shellCmd)
 }
 
-func nu(cmdParam *cobra.Command, params []string) error {
+func shell(cmdParam *cobra.Command, params []string) error {
 	projects, err := project.Load(config.Load())
 	if err != nil {
 		return err
