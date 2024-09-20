@@ -13,17 +13,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// codeCmd represents the code command
-var codeCmd = &cobra.Command{
-	Use:   "code",
-	Short: "Edit your project using the editor (code as default)",
-	RunE:  code,
-}
-
 func init() {
-	codeCmd.Flags().StringP("editor", "e", "code", "Code using (code|zed|subl|nvim) editor")
+	codeCmd := &cobra.Command{
+		Use:     "code",
+		Short:   "Edit your project using the editor (code as default)",
+		Aliases: []string{"vscode", "subl", "zed", "nvim"},
+		RunE:    code,
+	}
 	codeCmd.Flags().StringP("window", "w", "new", "Window type (new|reuse|add)")
-
 	rootCmd.AddCommand(codeCmd)
 }
 
@@ -42,16 +39,15 @@ func code(cmdParam *cobra.Command, params []string) error {
 		return err
 	}
 
-	editor := "code"
 	args := make([]string, 0)
 
-	editor = SafeStringFlag(cmdParam, "editor")
+	var editor string
 	window := SafeStringFlag(cmdParam, "window")
-
 	openType := "folder"
 
-	switch editor {
-	case "code":
+	switch cmdParam.CalledAs() {
+	case "code", "vscode":
+		editor = "code"
 
 		switch window {
 		case "reuse":
@@ -71,6 +67,8 @@ func code(cmdParam *cobra.Command, params []string) error {
 		args = append(args, p.RootPath)
 
 	case "subl", "sublime":
+		editor = "subl"
+
 		if p.ProjectType != project.ProjectTypeLocal {
 			return fmt.Errorf("sublime not support remote project")
 		}
@@ -94,6 +92,8 @@ func code(cmdParam *cobra.Command, params []string) error {
 		}
 
 	case "zed":
+		editor = "zed"
+
 		if p.ProjectType != project.ProjectTypeLocal {
 			return fmt.Errorf("zed not support remote project")
 		}
@@ -115,6 +115,8 @@ func code(cmdParam *cobra.Command, params []string) error {
 		}
 
 	case "nvim":
+		editor = "nvim"
+
 		switch p.ProjectType {
 		case project.ProjectTypeLocal, project.ProjectTypeWSL:
 		default:

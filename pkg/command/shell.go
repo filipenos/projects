@@ -6,20 +6,19 @@ import (
 	"os/exec"
 
 	"github.com/filipenos/projects/pkg/config"
+	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
 	"github.com/spf13/cobra"
 )
 
-// shellCmd represents the list command
-var shellCmd = &cobra.Command{
-	Use:     "shell",
-	Aliases: []string{"sh", "nu", "n"},
-	Short:   "Open project using Shell",
-	RunE:    shell,
-}
-
 func init() {
+	shellCmd := &cobra.Command{
+		Use:     "shell",
+		Short:   "Open project using Shell",
+		Aliases: []string{"sh", "nu", "bash", "zsh"},
+		RunE:    shell,
+	}
 	rootCmd.AddCommand(shellCmd)
 }
 
@@ -44,7 +43,25 @@ func shell(cmdParam *cobra.Command, params []string) error {
 		return fmt.Errorf("project type %s not supported", p.ProjectType)
 	}
 
-	cmd := exec.Command("nu", fmt.Sprintf("-e 'cd %s'", p.Path))
+	var shell string
+	args := make([]string, 0)
+	switch cmdParam.CalledAs() {
+	case "shell", "sh", "nu":
+		shell = "nu"
+		args = append(args, fmt.Sprintf("-e 'cd %s'", p.Path))
+	case "zsh":
+		shell = "zsh"
+		args = append(args, "-c", fmt.Sprintf("cd %s; exec zsh", p.Path))
+	case "bash":
+		shell = "bash"
+		args = append(args, "-c", fmt.Sprintf("cd %s; exec bash", p.Path))
+	default:
+		return fmt.Errorf("shell not supported")
+	}
+
+	log.Infof("shell %s on '%s'", shell, p.RootPath)
+
+	cmd := exec.Command(shell, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
