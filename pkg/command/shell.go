@@ -37,6 +37,10 @@ func shell(cmdParam *cobra.Command, params []string) error {
 		return err
 	}
 
+	if p.IsWorkspace {
+		return fmt.Errorf("project is a workspace")
+	}
+
 	switch p.ProjectType {
 	case project.ProjectTypeLocal, project.ProjectTypeWSL:
 	default:
