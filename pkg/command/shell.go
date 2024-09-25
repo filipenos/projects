@@ -47,21 +47,16 @@ func shell(cmdParam *cobra.Command, params []string) error {
 		return fmt.Errorf("project type %s not supported", p.ProjectType)
 	}
 
-	var shell string
-	args := make([]string, 0)
+	shell := cmdParam.CalledAs()
 	switch cmdParam.CalledAs() {
-	case "shell", "sh", "nu":
-		shell = "nu"
-		args = append(args, fmt.Sprintf("-e 'cd %s'", p.Path))
-	case "zsh":
-		shell = "zsh"
-		args = append(args, "-c", fmt.Sprintf("cd %s; exec zsh", p.Path))
-	case "bash":
-		shell = "bash"
-		args = append(args, "-c", fmt.Sprintf("cd %s; exec bash", p.Path))
+	case "shell", "sh":
+		shell = os.Getenv("SHELL")
+	case "zsh", "bash", "nu":
 	default:
 		return fmt.Errorf("shell not supported")
 	}
+
+	args := []string{"-c", fmt.Sprintf("cd %s; exec %s", p.Path, shell)}
 
 	log.Infof("shell %s on '%s'", shell, p.RootPath)
 
