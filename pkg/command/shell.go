@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/log"
@@ -37,10 +38,6 @@ func shell(cmdParam *cobra.Command, params []string) error {
 		return err
 	}
 
-	if p.IsWorkspace {
-		return fmt.Errorf("project is a workspace")
-	}
-
 	switch p.ProjectType {
 	case project.ProjectTypeLocal, project.ProjectTypeWSL:
 	default:
@@ -56,9 +53,15 @@ func shell(cmdParam *cobra.Command, params []string) error {
 		return fmt.Errorf("shell not supported")
 	}
 
-	args := []string{"-c", fmt.Sprintf("cd %s; exec %s", p.Path, shell)}
-
 	log.Infof("shell %s on '%s'", shell, p.RootPath)
+
+	path := p.Path
+	if p.IsWorkspace {
+		parts := strings.Split(p.Path, "/")
+		path = strings.Join(parts[:len(parts)-1], "/")
+	}
+
+	args := []string{"-c", fmt.Sprintf("cd %s; exec %s", path, shell)}
 
 	cmd := exec.Command(shell, args...)
 	cmd.Stdin = os.Stdin
