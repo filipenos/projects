@@ -16,7 +16,7 @@ import (
 func init() {
 	shellCmd := &cobra.Command{
 		Use:     "shell",
-		Short:   "Open project using Shell",
+		Short:   fmt.Sprintf("Open project using Shell (%s current)", CurrentShell()),
 		Aliases: []string{"sh", "nu", "bash", "zsh"},
 		RunE:    shell,
 	}
@@ -47,7 +47,7 @@ func shell(cmdParam *cobra.Command, params []string) error {
 	shell := cmdParam.CalledAs()
 	switch cmdParam.CalledAs() {
 	case "shell", "sh":
-		shell = os.Getenv("SHELL")
+		shell = CurrentShell()
 	case "zsh", "bash", "nu":
 	default:
 		return fmt.Errorf("shell not supported")
@@ -68,4 +68,12 @@ func shell(cmdParam *cobra.Command, params []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func CurrentShell() (s string) {
+	s = os.Getenv("SHELL")
+	if s == "" {
+		s = "bash"
+	}
+	return
 }
