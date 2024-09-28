@@ -58,7 +58,7 @@ func code(cmdParam *cobra.Command, params []string) error {
 			args = append(args, "--new-window")
 		}
 
-		if p.IsWorkspace && p.ProjectType == project.ProjectTypeSSH {
+		if p.IsWorkspace {
 			args = append(args, "--file-uri")
 			openType = "file"
 		} else {

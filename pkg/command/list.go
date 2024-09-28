@@ -32,8 +32,7 @@ func list(cmdParam *cobra.Command, params []string) error {
 	sort.Sort(projects)
 
 	for _, p := range projects {
-		print := p.Name
-		print += " " + string(p.ProjectType)
+		print := fmt.Sprintf("%s %s", p.Name, string(p.ProjectType))
 		if p.IsWorkspace {
 			print += " (w)"
 		}
