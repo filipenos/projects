@@ -38,6 +38,7 @@ func shell(cmdParam *cobra.Command, params []string) error {
 		return err
 	}
 
+	//TODO (filipenos) é possivel abrir o ssh, fiz no exec
 	switch p.ProjectType {
 	case project.ProjectTypeLocal, project.ProjectTypeWSL:
 	default:

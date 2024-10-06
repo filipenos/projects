@@ -11,9 +11,8 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "projects",
-	Short: "A brief description of your application",
-	Long:  `Have all your work projects in one place. Open, edit in a much simpler way.`,
+	Use:  "projects",
+	Long: `Have all your work projects in one place. Open, edit in a much simpler way.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

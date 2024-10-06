@@ -7,11 +7,20 @@ import (
 )
 
 type Workspace struct {
-	Path    string
-	Folders []Folders `json:"folders"`
+	Path     string
+	Folders  []Folders `json:"folders"`
+	Settings Settings  `json:"settings"`
 }
 type Folders struct {
 	Path string `json:"path"`
+}
+type RemoteSSHDefaultForwardedPorts struct {
+	Name       string `json:"name"`
+	LocalPort  int    `json:"localPort"`
+	RemotePort int    `json:"remotePort"`
+}
+type Settings struct {
+	RemoteSSHDefaultForwardedPorts []RemoteSSHDefaultForwardedPorts `json:"remote.SSH.defaultForwardedPorts"`
 }
 
 func Load(path string) (*Workspace, error) {
