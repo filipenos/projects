@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/project"
 	"github.com/spf13/cobra"
 )
@@ -25,7 +24,7 @@ func init() {
 }
 
 func list(cmdParam *cobra.Command, params []string) error {
-	projects, err := project.Load(config.Load())
+	projects, err := project.Load(cfg)
 	if err != nil {
 		return fmt.Errorf("error on load file: %v", err)
 	}

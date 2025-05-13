@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
@@ -24,7 +23,7 @@ func init() {
 }
 
 func execCmd(cmdParam *cobra.Command, params []string) error {
-	projects, err := project.Load(config.Load())
+	projects, err := project.Load(cfg)
 	if err != nil {
 		return err
 	}

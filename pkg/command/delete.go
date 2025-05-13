@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 
-	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
@@ -27,7 +26,7 @@ func delete(cmdParam *cobra.Command, params []string) error {
 		return project.ErrNameRequired
 	}
 
-	projects, err := project.Load(config.Load())
+	projects, err := project.Load(cfg)
 	if err != nil {
 		return err
 	}
@@ -49,5 +48,5 @@ func delete(cmdParam *cobra.Command, params []string) error {
 	log.Infof("Project '%s' removed successfully!", name)
 
 	projects = aux
-	return projects.Save(config.Load())
+	return projects.Save(cfg)
 }

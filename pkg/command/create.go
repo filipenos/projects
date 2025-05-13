@@ -5,7 +5,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
@@ -69,7 +68,7 @@ func create(cmdParam *cobra.Command, params []string) error {
 		}
 	}
 
-	projects, err := project.Load(config.Load())
+	projects, err := project.Load(cfg)
 	if err != nil {
 		return err
 	}
@@ -79,7 +78,7 @@ func create(cmdParam *cobra.Command, params []string) error {
 	}
 
 	projects = append(projects, *p)
-	if err := projects.Save(config.Load()); err != nil {
+	if err := projects.Save(cfg); err != nil {
 		return err
 	}
 	log.Infof("Add project: '%s' path: '%s'", p.Name, p.RootPath)

@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 
-	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
 	"github.com/spf13/cobra"
@@ -26,7 +25,7 @@ func update(cmdParam *cobra.Command, params []string) error {
 		return project.ErrNameRequired
 	}
 
-	projects, err := project.Load(config.Load())
+	projects, err := project.Load(cfg)
 	if err != nil {
 		return err
 	}
@@ -54,5 +53,5 @@ func update(cmdParam *cobra.Command, params []string) error {
 	}
 
 	projects[index] = *edited
-	return projects.Save(config.Load())
+	return projects.Save(cfg)
 }
