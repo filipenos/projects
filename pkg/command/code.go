@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
@@ -16,7 +15,7 @@ import (
 func init() {
 	codeCmd := &cobra.Command{
 		Use:     "code",
-		Short:   "Edit your project using the editor (code as default)",
+		Short:   fmt.Sprintf("Edit your project using the editor (%s as default)", cfg.Editor),
 		Aliases: []string{"vscode", "subl", "zed", "nvim"},
 		RunE:    code,
 	}
@@ -25,7 +24,7 @@ func init() {
 }
 
 func code(cmdParam *cobra.Command, params []string) error {
-	projects, err := project.Load(config.Load())
+	projects, err := project.Load(cfg)
 	if err != nil {
 		return err
 	}

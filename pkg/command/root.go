@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/filipenos/projects/pkg/config"
 	"github.com/spf13/cobra"
 )
+
+var cfg = config.Load()
 
 //https://github.com/liamg/sunder
 
