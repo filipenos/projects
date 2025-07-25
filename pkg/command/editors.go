@@ -40,7 +40,7 @@ func init() {
 				return fmt.Errorf("editor service not initialized")
 			}
 
-			avaliables, notAvailable := editorService.GetAvailableEditors()
+			avaliables, notAvailable := editorService.GetEditors()
 			fmt.Println("Available editors:")
 			for _, editor := range avaliables {
 				fmt.Printf("  - %s\n", editor)
@@ -74,7 +74,7 @@ func init() {
 			// Atualiza aliases do comando code
 			for _, c := range rootCmd.Commands() {
 				if c.Use == "code" {
-					c.Aliases, _ = editorService.GetAvailableEditors()
+					c.Aliases = editorService.Aliases()
 					break
 				}
 			}

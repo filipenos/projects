@@ -157,10 +157,7 @@ func InitEditors() error {
 				Aliases:        []string{"zed"},
 				Executable:     "zed",
 				SupportedTypes: []string{"local"},
-				WindowArgs: map[string][]string{
-					"new": {"--new-window"},
-				},
-				PathPosition: -1,
+				PathPosition:   -1,
 			},
 			{
 				Name:           "vim",

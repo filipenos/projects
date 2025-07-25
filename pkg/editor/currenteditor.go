@@ -54,7 +54,7 @@ func (e *SublimeEditor) Name() string {
 }
 
 func (e *SublimeEditor) Aliases() []string {
-	return []string{"subl"}
+	return []string{"sublime", "subl"}
 }
 
 func (e *SublimeEditor) SupportsProjectType(projectType project.ProjectType) bool {

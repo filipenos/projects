@@ -146,8 +146,8 @@ func (s *Service) RegisterEditor(editor Editor) {
 	s.registry.Register(editor)
 }
 
-// GetAvailableEditors retorna todos os editores disponíveis
-func (s *Service) GetAvailableEditors() (avaliables []string, notAvailable []string) {
+// GetEditors retorna todos os editores disponíveis
+func (s *Service) GetEditors() (avaliables []string, notAvailable []string) {
 	seen := make(map[string]bool)
 
 	for _, editor := range s.registry.editors {
@@ -165,6 +165,14 @@ func (s *Service) GetAvailableEditors() (avaliables []string, notAvailable []str
 	}
 
 	return
+}
+
+func (s *Service) Aliases() []string {
+	aliases := make([]string, 0, len(s.registry.editors))
+	for _, editor := range s.registry.editors {
+		aliases = append(aliases, editor.Aliases()...)
+	}
+	return aliases
 }
 
 // OpenProject abre um projeto no editor especificado
