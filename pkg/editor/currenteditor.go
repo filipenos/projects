@@ -9,7 +9,7 @@ import (
 type VSCodeEditor struct{}
 
 func (e *VSCodeEditor) Name() string {
-	return "vscode"
+	return "code"
 }
 
 func (e *VSCodeEditor) Aliases() []string {

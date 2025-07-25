@@ -56,20 +56,6 @@ func (r *Registry) Get(name string) (Editor, bool) {
 	return editor, exists
 }
 
-// GetAllNames retorna todos os nomes e aliases disponíveis
-func (r *Registry) GetAllNames() []string {
-	var names []string
-	seen := make(map[string]bool)
-
-	for name := range r.editors {
-		if !seen[name] {
-			names = append(names, name)
-			seen[name] = true
-		}
-	}
-	return names
-}
-
 // Service gerencia as operações com editores
 type Service struct {
 	registry *Registry
@@ -162,13 +148,22 @@ func (s *Service) RegisterEditor(editor Editor) {
 
 // GetAvailableEditors retorna todos os editores disponíveis
 func (s *Service) GetAvailableEditors() (avaliables []string, notAvailable []string) {
-	for _, editor := range s.registry.GetAllNames() {
-		if path.ExistsInPathOrAsFile(editor) {
-			avaliables = append(avaliables, editor)
+	seen := make(map[string]bool)
+
+	for _, editor := range s.registry.editors {
+		name := editor.Name()
+		if _, ok := seen[name]; ok {
+			continue
+		}
+
+		seen[name] = true
+		if path.ExistsInPathOrAsFile(editor.GetExecutable()) {
+			avaliables = append(avaliables, name)
 		} else {
-			notAvailable = append(notAvailable, editor)
+			notAvailable = append(notAvailable, name)
 		}
 	}
+
 	return
 }
 
