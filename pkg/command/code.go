@@ -25,11 +25,11 @@ func init() {
 	}
 
 	codeCmd := &cobra.Command{
-		Use:     "code",
-		Short:   fmt.Sprintf("Edit your project using the editor (%s as default)", cfg.Editor),
-		Aliases: editorService.GetAvailableEditors(),
-		RunE:    code,
+		Use:   "code",
+		Short: fmt.Sprintf("Edit your project using the editor (%s as default)", cfg.Editor),
+		RunE:  code,
 	}
+	codeCmd.Aliases, _ = editorService.GetAvailableEditors()
 	codeCmd.Flags().StringP("window", "w", "new", "Window type (new|reuse|add)")
 	rootCmd.AddCommand(codeCmd)
 }

@@ -13,7 +13,7 @@ func (e *VSCodeEditor) Name() string {
 }
 
 func (e *VSCodeEditor) Aliases() []string {
-	return []string{"code"}
+	return []string{"code", "vscode"}
 }
 
 func (e *VSCodeEditor) SupportsProjectType(projectType project.ProjectType) bool {
@@ -42,46 +42,6 @@ func (e *VSCodeEditor) BuildArgs(p *project.Project, window WindowType) ([]strin
 		args = append(args, "--folder-uri")
 	}
 	args = append(args, p.RootPath)
-
-	return args, nil
-}
-
-// ZedEditor implementa suporte ao Zed
-type ZedEditor struct{}
-
-func (e *ZedEditor) Name() string {
-	return "zed"
-}
-
-func (e *ZedEditor) Aliases() []string {
-	return []string{}
-}
-
-func (e *ZedEditor) SupportsProjectType(projectType project.ProjectType) bool {
-	return projectType == project.ProjectTypeLocal
-}
-
-func (e *ZedEditor) GetExecutable() string {
-	return "zed"
-}
-
-func (e *ZedEditor) BuildArgs(p *project.Project, window WindowType) ([]string, error) {
-	args := make([]string, 0)
-
-	switch window {
-	case WindowTypeAdd:
-		args = append(args, "--add")
-	}
-
-	if p.IsWorkspace {
-		w, err := workspace.Load(p.RootPath)
-		if err != nil {
-			return nil, err
-		}
-		args = append(args, w.FoldersPath()...)
-	} else {
-		args = append(args, p.RootPath)
-	}
 
 	return args, nil
 }
@@ -126,27 +86,4 @@ func (e *SublimeEditor) BuildArgs(p *project.Project, window WindowType) ([]stri
 	}
 
 	return args, nil
-}
-
-// NvimEditor implementa suporte ao Neovim
-type NvimEditor struct{}
-
-func (e *NvimEditor) Name() string {
-	return "nvim"
-}
-
-func (e *NvimEditor) Aliases() []string {
-	return []string{}
-}
-
-func (e *NvimEditor) SupportsProjectType(projectType project.ProjectType) bool {
-	return projectType == project.ProjectTypeLocal || projectType == project.ProjectTypeWSL
-}
-
-func (e *NvimEditor) GetExecutable() string {
-	return "nvim"
-}
-
-func (e *NvimEditor) BuildArgs(p *project.Project, window WindowType) ([]string, error) {
-	return []string{p.Path}, nil
 }

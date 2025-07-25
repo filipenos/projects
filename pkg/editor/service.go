@@ -8,6 +8,7 @@ import (
 
 	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/log"
+	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
 )
 
@@ -82,8 +83,6 @@ func NewService(cfg config.Config) (*Service, error) {
 	// Registra editores padrão
 	registry.Register(&VSCodeEditor{})
 	registry.Register(&SublimeEditor{})
-	registry.Register(&ZedEditor{})
-	registry.Register(&NvimEditor{})
 
 	service := &Service{
 		registry: registry,
@@ -162,8 +161,15 @@ func (s *Service) RegisterEditor(editor Editor) {
 }
 
 // GetAvailableEditors retorna todos os editores disponíveis
-func (s *Service) GetAvailableEditors() []string {
-	return s.registry.GetAllNames()
+func (s *Service) GetAvailableEditors() (avaliables []string, notAvailable []string) {
+	for _, editor := range s.registry.GetAllNames() {
+		if path.ExistsInPathOrAsFile(editor) {
+			avaliables = append(avaliables, editor)
+		} else {
+			notAvailable = append(notAvailable, editor)
+		}
+	}
+	return
 }
 
 // OpenProject abre um projeto no editor especificado

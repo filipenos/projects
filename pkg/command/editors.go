@@ -40,10 +40,16 @@ func init() {
 				return fmt.Errorf("editor service not initialized")
 			}
 
-			editors := editorService.GetAvailableEditors()
+			avaliables, notAvailable := editorService.GetAvailableEditors()
 			fmt.Println("Available editors:")
-			for _, editor := range editors {
+			for _, editor := range avaliables {
 				fmt.Printf("  - %s\n", editor)
+			}
+			if len(notAvailable) > 0 {
+				fmt.Println("Not available editors: (not found in PATH or not executable): ")
+				for _, editor := range notAvailable {
+					fmt.Printf("  - %s\n", editor)
+				}
 			}
 			return nil
 		},
@@ -68,7 +74,7 @@ func init() {
 			// Atualiza aliases do comando code
 			for _, c := range rootCmd.Commands() {
 				if c.Use == "code" {
-					c.Aliases = editorService.GetAvailableEditors()
+					c.Aliases, _ = editorService.GetAvailableEditors()
 					break
 				}
 			}
