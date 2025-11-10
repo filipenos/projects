@@ -6,6 +6,7 @@ import (
 
 	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/editor"
+	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
 	"github.com/spf13/cobra"
@@ -24,7 +25,7 @@ func init() {
 	)
 	editorService, err = editor.NewService(cfg)
 	if err != nil {
-		fmt.Printf("Warning: failed to initialize editor service: %v\n", err)
+		log.Warnf("failed to initialize editor service: %v", err)
 	} else {
 		aliases = editorService.Aliases()
 	}

@@ -1,10 +1,10 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/filipenos/projects/pkg/config"
+	"github.com/filipenos/projects/pkg/log"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +22,7 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		log.Warnf("command failed: %v", err)
 		os.Exit(1)
 	}
 }

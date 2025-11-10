@@ -1,8 +1,7 @@
 package command
 
 import (
-	"fmt"
-
+	"github.com/filipenos/projects/pkg/log"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +16,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Show version of projects",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Version %s, Build %s\n", Version, Commit)
+		log.Infof("Version %s, Build %s", Version, Commit)
 	},
 }
 

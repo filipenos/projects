@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/project"
 	"github.com/spf13/cobra"
 )
@@ -41,7 +42,7 @@ func list(cmdParam *cobra.Command, params []string) error {
 		if !p.ValidPath {
 			print += " (invalid-path)"
 		}
-		fmt.Println(print)
+		log.Infof("%s", print)
 	}
 
 	return nil

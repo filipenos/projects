@@ -5,6 +5,7 @@ import (
 
 	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/editor"
+	"github.com/filipenos/projects/pkg/log"
 	"github.com/spf13/cobra"
 )
 
@@ -24,8 +25,8 @@ func init() {
 			if err := config.InitEditors(); err != nil {
 				return err
 			}
-			fmt.Printf("Editors configuration file created at: %s\n", config.GetEditorsConfigPath())
-			fmt.Println("You can now add custom editors to this file.")
+			log.Infof("Editors configuration file created at: %s", config.GetEditorsConfigPath())
+			log.Infof("You can now add custom editors to this file.")
 			return nil
 		},
 	}
@@ -41,14 +42,14 @@ func init() {
 			}
 
 			avaliables, notAvailable := editorService.GetEditors()
-			fmt.Println("Available editors:")
+			log.Infof("Available editors:")
 			for _, editor := range avaliables {
-				fmt.Printf("  - %s\n", editor)
+				log.Infof("  - %s", editor)
 			}
 			if len(notAvailable) > 0 {
-				fmt.Println("Not available editors: (not found in PATH or not executable): ")
+				log.Infof("Not available editors: (not found in PATH or not executable): ")
 				for _, editor := range notAvailable {
-					fmt.Printf("  - %s\n", editor)
+					log.Infof("  - %s", editor)
 				}
 			}
 			return nil
@@ -69,7 +70,7 @@ func init() {
 				return fmt.Errorf("failed to reload editor service: %w", err)
 			}
 
-			fmt.Println("Editors configuration reloaded successfully!")
+			log.Infof("Editors configuration reloaded successfully!")
 
 			// Atualiza aliases do comando code
 			for _, c := range rootCmd.Commands() {
