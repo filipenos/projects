@@ -37,7 +37,7 @@ func execCmd(cmdParam *cobra.Command, params []string) error {
 		return err
 	}
 	if len(params) < 2 {
-		return fmt.Errorf("required at least one argument")
+		return fmt.Errorf("missing command to execute inside project")
 	}
 
 	var (
@@ -67,6 +67,8 @@ func execCmd(cmdParam *cobra.Command, params []string) error {
 		args = append(args, "-t") // Force pseudo-tty allocation
 		args = append(args, "cd "+subPath+";"+toExec)
 		toExec = "ssh"
+	default:
+		return fmt.Errorf("project type %s not supported for exec command", p.ProjectType)
 	}
 
 	if len(params) > 2 {

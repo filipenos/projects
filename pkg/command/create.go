@@ -12,12 +12,15 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(&cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "create",
 		Aliases: []string{"add"},
 		Short:   "Create new project",
 		RunE:    create,
-	})
+	}
+	cmd.Flags().Bool("editor", false, "Edit project fields before saving")
+	cmd.Flags().Bool("no-validate", false, "Skip path validation")
+	rootCmd.AddCommand(cmd)
 }
 
 func create(cmdParam *cobra.Command, params []string) error {
@@ -36,7 +39,7 @@ func create(cmdParam *cobra.Command, params []string) error {
 		p.Name = strings.TrimSpace(params[0])
 		p.RootPath = strings.TrimSpace(params[1])
 	default:
-		return fmt.Errorf("invalid size of arguments")
+		return fmt.Errorf("usage: projects create [name] [path]")
 	}
 
 	if p.RootPath != "" && path.Exist(fmt.Sprintf("%s/.git", p.RootPath)) {
@@ -74,7 +77,7 @@ func create(cmdParam *cobra.Command, params []string) error {
 	}
 
 	if p, _ := projects.Get(p.Name); p != nil {
-		return fmt.Errorf("project '%s' already add to projects", p.Name)
+		return fmt.Errorf("project '%s' already exists", p.Name)
 	}
 
 	projects = append(projects, *p)

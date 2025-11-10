@@ -17,9 +17,6 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
-	listCmd.Flags().BoolP("path", "p", false, "Reuse same window")
-	listCmd.Flags().BoolP("simple", "s", false, "Reuse same window")
-
 	rootCmd.AddCommand(listCmd)
 }
 

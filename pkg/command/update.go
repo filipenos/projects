@@ -9,6 +9,7 @@ import (
 )
 
 func init() {
+	updateCmd.Flags().Bool("no-validate", false, "Skip path validation")
 	rootCmd.AddCommand(updateCmd)
 }
 

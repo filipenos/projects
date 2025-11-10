@@ -18,15 +18,20 @@ func init() {
 	cfg := config.Load()
 
 	// Inicializa o serviço de editores
-	var err error
+	var (
+		err     error
+		aliases []string
+	)
 	editorService, err = editor.NewService(cfg)
 	if err != nil {
 		fmt.Printf("Warning: failed to initialize editor service: %v\n", err)
+	} else {
+		aliases = editorService.Aliases()
 	}
 
 	codeCmd := &cobra.Command{
 		Use:     "code",
-		Aliases: editorService.Aliases(),
+		Aliases: aliases,
 		Short:   fmt.Sprintf("Edit your project using the editor (%s as default)", cfg.Editor),
 		RunE:    code,
 	}
@@ -35,6 +40,9 @@ func init() {
 }
 
 func code(cmdParam *cobra.Command, params []string) error {
+	if editorService == nil {
+		return fmt.Errorf("editor service not initialized; run 'projects editors reload'")
+	}
 	projects, err := project.Load(cfg)
 	if err != nil {
 		return err
