@@ -25,8 +25,8 @@ func init() {
 			if err := config.InitEditors(); err != nil {
 				return err
 			}
-			log.Infof("Editors configuration file created at: %s", config.GetEditorsConfigPath())
-			log.Infof("You can now add custom editors to this file.")
+			log.Printf("Editors configuration file created at: %s\n", config.GetEditorsConfigPath())
+			log.Println("You can now add custom editors to this file.")
 			return nil
 		},
 	}
@@ -42,14 +42,14 @@ func init() {
 			}
 
 			avaliables, notAvailable := editorService.GetEditors()
-			log.Infof("Available editors:")
+			log.Println("Available editors:")
 			for _, editor := range avaliables {
-				log.Infof("  - %s", editor)
+				log.Println("  -", editor)
 			}
 			if len(notAvailable) > 0 {
-				log.Infof("Not available editors: (not found in PATH or not executable): ")
+				log.Println("Not available editors: (not found in PATH or not executable): ")
 				for _, editor := range notAvailable {
-					log.Infof("  - %s", editor)
+					log.Println("  -", editor)
 				}
 			}
 			return nil

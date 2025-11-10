@@ -42,7 +42,7 @@ func list(cmdParam *cobra.Command, params []string) error {
 		if !p.ValidPath {
 			print += " (invalid-path)"
 		}
-		log.Infof("%s", print)
+		log.Println(print)
 	}
 
 	return nil
