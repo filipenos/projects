@@ -1,6 +1,7 @@
 package path
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -58,4 +59,11 @@ func ExistsInPathOrAsFile(name string) bool {
 	// Caso contrário, tenta procurar no PATH
 	_, err := exec.LookPath(name)
 	return err == nil
+}
+
+func EnsureExecutable(name string) error {
+	if ExistsInPathOrAsFile(name) {
+		return nil
+	}
+	return fmt.Errorf("executable '%s' not found in PATH", name)
 }

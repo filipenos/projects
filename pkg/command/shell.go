@@ -55,6 +55,10 @@ func shell(cmdParam *cobra.Command, params []string) error {
 
 	log.Infof("shell %s on '%s'", shell, p.RootPath)
 
+	if err := path.EnsureExecutable(shell); err != nil {
+		return err
+	}
+
 	path := p.Path
 	if p.IsWorkspace {
 		parts := strings.Split(p.Path, "/")

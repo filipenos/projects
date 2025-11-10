@@ -54,6 +54,10 @@ func runTmux(cmdParam *cobra.Command, params []string) error {
 		tmuxArgs = append(tmuxArgs, params[1:]...)
 	}
 
+	if err := path.EnsureExecutable("tmux"); err != nil {
+		return err
+	}
+
 	sessionExists, err := tmuxSessionExists(sessionName)
 	if err != nil {
 		return err

@@ -198,6 +198,10 @@ func (s *Service) OpenProject(editorName string, p *project.Project, window Wind
 		openType = "file"
 	}
 
+	if err := path.EnsureExecutable(executable); err != nil {
+		return fmt.Errorf("editor '%s': %w", editor.Name(), err)
+	}
+
 	log.Infof("open %s '%s' on '%s'", openType, p.RootPath, executable)
 
 	cmd := exec.Command(executable, args...)
