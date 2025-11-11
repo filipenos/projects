@@ -37,6 +37,9 @@ func TestLoadReadsConfigFileAndBackfillsEditorsPath(t *testing.T) {
 	if cfg.EditorsLocation != editorsConf {
 		t.Fatalf("expected editors location fallback %s, got %s", editorsConf, cfg.EditorsLocation)
 	}
+	if cfg.SessionBackend != defaultSettings.SessionBackend {
+		t.Fatalf("expected default session backend %s, got %s", defaultSettings.SessionBackend, cfg.SessionBackend)
+	}
 }
 
 func TestInitCreatesConfigFile(t *testing.T) {

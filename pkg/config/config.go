@@ -12,11 +12,12 @@ var (
 	projectsConf    = fmt.Sprintf("%s/.projects.conf.json", os.Getenv("HOME"))
 	projectsPath    = fmt.Sprintf("%s/.projects.json", os.Getenv("HOME"))
 	editorsConf     = fmt.Sprintf("%s/.projects.editors.json", os.Getenv("HOME"))
-	defaultSettings = Config{
-		ProjectLocation: projectsPath,
-		Editor:          "code",
-		EditorsLocation: editorsConf,
-	}
+defaultSettings = Config{
+	ProjectLocation: projectsPath,
+	Editor:          "code",
+	EditorsLocation: editorsConf,
+	SessionBackend:  "tmux",
+}
 )
 
 // Config save configuration
@@ -24,6 +25,7 @@ type Config struct {
 	ProjectLocation string `json:"projects_location"`
 	Editor          string `json:"editor"`
 	EditorsLocation string `json:"editors_location,omitempty"`
+	SessionBackend  string `json:"session_backend,omitempty"`
 }
 
 // EditorConfig representa a configuração de um editor no arquivo JSON
