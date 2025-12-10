@@ -38,7 +38,7 @@ func TestParseSessionParamsHandlesFlags(t *testing.T) {
 		t.Fatalf("unexpected parsed values backend=%s project=%s args=%v", backend, project, args)
 	}
 
-	backend, project, args, err = parseSessionParams([]string{"-b", "screen", "proj"}, "tmux")
+	backend, project, _, err = parseSessionParams([]string{"-b", "screen", "proj"}, "tmux")
 	if err != nil || backend != "screen" || project != "proj" {
 		t.Fatalf("failed to parse shorthand flag: backend=%s project=%s err=%v", backend, project, err)
 	}
