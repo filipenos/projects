@@ -41,42 +41,59 @@ func execCmd(cmdParam *cobra.Command, params []string) error {
 	}
 
 	var (
-		toExec = params[1]
-		args   []string
-		path   string
+		command = params[1]
+		args    []string
+		workDir string
 	)
 
 	switch p.ProjectType {
 	case project.ProjectTypeLocal:
-		path = p.RootPath
+		workDir = p.RootPath
+		if len(params) > 2 {
+			args = params[2:]
+		}
+
 	case project.ProjectTypeSSH:
-		log.Infof("executing on ssh host, some features not working")
+		log.Infof("executing on ssh host")
 		i := strings.Index(p.RootPath, "+")
 		if i == -1 {
-			return fmt.Errorf("invalid path")
+			return fmt.Errorf("invalid path format")
 		}
 		subPath := p.RootPath[i+1:]
 		i = strings.Index(subPath, "/")
 		if i == -1 {
-			return fmt.Errorf("invalid path")
+			return fmt.Errorf("invalid path format")
 		}
 		sshHost := subPath[:i]
-		subPath = subPath[i:]
+		sshPath := subPath[i:]
 
-		args = append(args, sshHost)
-		args = append(args, "-t") // Force pseudo-tty allocation
-		args = append(args, "cd "+subPath+";"+toExec)
-		toExec = "ssh"
+		if p.IsWorkspace {
+			parts := strings.Split(sshPath, "/")
+			if len(parts) > 1 {
+				sshPath = strings.Join(parts[:len(parts)-1], "/")
+			}
+		}
+
+		// Constrói o comando completo com argumentos
+		var remoteCmd strings.Builder
+		remoteCmd.WriteString(fmt.Sprintf("cd %s && %s", sshPath, command))
+		if len(params) > 2 {
+			for _, arg := range params[2:] {
+				remoteCmd.WriteString(" ")
+				remoteCmd.WriteString(arg)
+			}
+		}
+
+		args = []string{sshHost, "-t", remoteCmd.String()}
+		command = "ssh"
+		workDir = "" // SSH doesn't use local workDir
+
 	default:
 		return fmt.Errorf("project type %s not supported for exec command", p.ProjectType)
 	}
 
-	if len(params) > 2 {
-		args = append(args, params[2:]...)
-	}
-
-	cmd := exec.Command(toExec, args...)
-	cmd.Dir = path
+	cmd := exec.Command(command, args...)
+	cmd.Dir = workDir
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

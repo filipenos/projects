@@ -37,13 +37,6 @@ func shell(cmdParam *cobra.Command, params []string) error {
 		return err
 	}
 
-	//TODO (filipenos) é possivel abrir o ssh, fiz no exec
-	switch p.ProjectType {
-	case project.ProjectTypeLocal, project.ProjectTypeWSL:
-	default:
-		return fmt.Errorf("project type %s not supported", p.ProjectType)
-	}
-
 	shell := cmdParam.CalledAs()
 	switch cmdParam.CalledAs() {
 	case "shell", "sh":
@@ -55,19 +48,66 @@ func shell(cmdParam *cobra.Command, params []string) error {
 
 	log.Infof("shell %s on '%s'", shell, p.RootPath)
 
-	if err := path.EnsureExecutable(shell); err != nil {
-		return err
+	var (
+		command string
+		args    []string
+		execDir string
+	)
+
+	switch p.ProjectType {
+	case project.ProjectTypeLocal, project.ProjectTypeWSL:
+		if err := path.EnsureExecutable(shell); err != nil {
+			return err
+		}
+
+		execDir = p.Path
+		if p.IsWorkspace {
+			parts := strings.Split(p.Path, "/")
+			execDir = strings.Join(parts[:len(parts)-1], "/")
+		}
+
+		command = shell
+		sep := commandSeparator(shell)
+		args = []string{"-c", fmt.Sprintf("cd %s %s exec %s", execDir, sep, shell)}
+
+	case project.ProjectTypeSSH:
+		// SSH connections use the remote default shell, not the local alias
+		if cmdParam.CalledAs() != "shell" && cmdParam.CalledAs() != "sh" {
+			log.Infof("warning: SSH connections use the remote server's default shell, ignoring '%s' alias", cmdParam.CalledAs())
+			shell = CurrentShell()
+		}
+
+		log.Infof("opening shell on ssh host")
+		i := strings.Index(p.RootPath, "+")
+		if i == -1 {
+			return fmt.Errorf("invalid path format")
+		}
+		subPath := p.RootPath[i+1:]
+		i = strings.Index(subPath, "/")
+		if i == -1 {
+			return fmt.Errorf("invalid path format")
+		}
+		sshHost := subPath[:i]
+		sshPath := subPath[i:]
+
+		if p.IsWorkspace {
+			parts := strings.Split(sshPath, "/")
+			if len(parts) > 1 {
+				sshPath = strings.Join(parts[:len(parts)-1], "/")
+			}
+		}
+
+		command = "ssh"
+		sep := commandSeparator(shell)
+		args = []string{sshHost, "-t", fmt.Sprintf("cd %s %s exec %s", sshPath, sep, shell)}
+		execDir = "" // SSH doesn't use local workDir
+
+	default:
+		return fmt.Errorf("project type %s not supported", p.ProjectType)
 	}
 
-	path := p.Path
-	if p.IsWorkspace {
-		parts := strings.Split(p.Path, "/")
-		path = strings.Join(parts[:len(parts)-1], "/")
-	}
-
-	args := []string{"-c", fmt.Sprintf("cd %s; exec %s", path, shell)}
-
-	cmd := exec.Command(shell, args...)
+	cmd := exec.Command(command, args...)
+	cmd.Dir = execDir
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -80,4 +120,12 @@ func CurrentShell() (s string) {
 		s = "bash"
 	}
 	return
+}
+
+func commandSeparator(shell string) string {
+	// nushell doesn't support && operator
+	if strings.Contains(shell, "nu") {
+		return ";"
+	}
+	return "&&"
 }
