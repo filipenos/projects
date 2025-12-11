@@ -27,7 +27,7 @@ After installing, run `projects init` to generate the default config file.
 | `projects session <project> [args...]` | Opens/attaches a terminal session for the project | Aliases: `tmux`, `screen`. Use `--backend` to choose backend. Only supports local/WSL projects. |
 | `projects editors ...` | Manages supported editors | `projects editors init/list/reload` |
 | `projects completion [shell]` | Generates completion scripts | Use `--file` to write to disk instead of stdout |
-| `projects version` | Shows version and commit information | Displays the current version of the CLI |
+| `projects version` | Shows version and commit information | Use `--check-update` or `-c` to check for new releases on GitHub |
 
 ## Examples
 
@@ -111,6 +111,13 @@ Run backend-specific commands when creating the session:
 ```bash
 projects tmux my-project split-window -h
 # If the session already exists, the command fails telling you to close it first.
+```
+
+Check for updates:
+
+```bash
+projects version --check-update  # or -c
+# Checks GitHub for the latest release and shows update instructions if available
 ```
 
 ## Shell completions
