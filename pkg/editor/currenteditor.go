@@ -13,7 +13,7 @@ func (e *VSCodeEditor) Name() string {
 }
 
 func (e *VSCodeEditor) Aliases() []string {
-	return []string{"code", "vscode"}
+	return []string{"vscode"}
 }
 
 func (e *VSCodeEditor) SupportsProjectType(projectType project.ProjectType) bool {
@@ -54,7 +54,7 @@ func (e *SublimeEditor) Name() string {
 }
 
 func (e *SublimeEditor) Aliases() []string {
-	return []string{"sublime", "subl"}
+	return []string{"subl"}
 }
 
 func (e *SublimeEditor) SupportsProjectType(projectType project.ProjectType) bool {

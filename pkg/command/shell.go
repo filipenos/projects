@@ -23,6 +23,10 @@ func init() {
 }
 
 func shell(cmdParam *cobra.Command, params []string) error {
+	if len(params) == 0 {
+		return fmt.Errorf("project name is required")
+	}
+	
 	projects, err := project.Load(cfg)
 	if err != nil {
 		return err
@@ -31,7 +35,6 @@ func shell(cmdParam *cobra.Command, params []string) error {
 	p, _ := projects.Find(path.SafeName(params...))
 	if p == nil {
 		return fmt.Errorf("project not found")
-
 	}
 	if err := p.Validate(); err != nil {
 		return err

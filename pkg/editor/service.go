@@ -32,19 +32,22 @@ type Editor interface {
 
 // Registry mantém o registro de editores disponíveis
 type Registry struct {
-	editors map[string]Editor
+	editors       map[string]Editor
+	uniqueEditors []Editor
 }
 
 // NewRegistry cria uma nova instância do registro
 func NewRegistry() *Registry {
 	return &Registry{
-		editors: make(map[string]Editor),
+		editors:       make(map[string]Editor),
+		uniqueEditors: make([]Editor, 0),
 	}
 }
 
 // Register registra um editor no sistema
 func (r *Registry) Register(editor Editor) {
 	r.editors[editor.Name()] = editor
+	r.uniqueEditors = append(r.uniqueEditors, editor)
 	for _, alias := range editor.Aliases() {
 		r.editors[alias] = editor
 	}
@@ -150,7 +153,7 @@ func (s *Service) RegisterEditor(editor Editor) {
 func (s *Service) GetEditors() (avaliables []string, notAvailable []string) {
 	seen := make(map[string]bool)
 
-	for _, editor := range s.registry.editors {
+	for _, editor := range s.registry.uniqueEditors {
 		name := editor.Name()
 		if _, ok := seen[name]; ok {
 			continue
@@ -168,10 +171,39 @@ func (s *Service) GetEditors() (avaliables []string, notAvailable []string) {
 }
 
 func (s *Service) Aliases() []string {
-	aliases := make([]string, 0, len(s.registry.editors))
-	for _, editor := range s.registry.editors {
-		aliases = append(aliases, editor.Aliases()...)
+	seenAliases := make(map[string]bool)
+	aliases := make([]string, 0)
+
+	for _, editor := range s.registry.uniqueEditors {
+		editorName := editor.Name()
+
+		// Skip "code" as it's the main command name, not an alias
+		if editorName == "code" {
+			// Only add the other aliases for the code editor
+			for _, alias := range editor.Aliases() {
+				if !seenAliases[alias] {
+					aliases = append(aliases, alias)
+					seenAliases[alias] = true
+				}
+			}
+			continue
+		}
+
+		// Add the editor name itself if not already added
+		if !seenAliases[editorName] {
+			aliases = append(aliases, editorName)
+			seenAliases[editorName] = true
+		}
+
+		// Add all aliases for this editor
+		for _, alias := range editor.Aliases() {
+			if !seenAliases[alias] {
+				aliases = append(aliases, alias)
+				seenAliases[alias] = true
+			}
+		}
 	}
+
 	return aliases
 }
 

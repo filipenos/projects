@@ -44,6 +44,11 @@ func code(cmdParam *cobra.Command, params []string) error {
 	if editorService == nil {
 		return fmt.Errorf("editor service not initialized; run 'projects editors reload'")
 	}
+	
+	if len(params) == 0 {
+		return fmt.Errorf("project name is required")
+	}
+	
 	projects, err := project.Load(cfg)
 	if err != nil {
 		return err
