@@ -163,6 +163,14 @@ projects code my-remote
 2. Edit the file to add binaries such as `cursor`, `goland`, `code-insiders`.
 3. Reload the configuration with `projects editors reload`.
 
+**Note:** All configured editors automatically become available as command aliases. For example, if you configure `cursor`, you can use `projects cursor my-project` to open the project directly in Cursor.
+
+To see all available editors and their status:
+
+```bash
+projects editors list
+```
+
 ## Development
 
 ```bash

@@ -26,7 +26,7 @@ func shell(cmdParam *cobra.Command, params []string) error {
 	if len(params) == 0 {
 		return fmt.Errorf("project name is required")
 	}
-	
+
 	projects, err := project.Load(cfg)
 	if err != nil {
 		return err
