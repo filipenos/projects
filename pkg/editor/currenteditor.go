@@ -5,26 +5,30 @@ import (
 	"github.com/filipenos/projects/pkg/workspace"
 )
 
-// VSCodeEditor implementa suporte ao VS Code
-type VSCodeEditor struct{}
-
-func (e *VSCodeEditor) Name() string {
-	return "code"
+// VSCodeBasedEditor implementa suporte para editores baseados em VS Code (Code, Cursor, etc)
+type VSCodeBasedEditor struct {
+	name       string
+	executable string
+	aliases    []string
 }
 
-func (e *VSCodeEditor) Aliases() []string {
-	return []string{"vscode"}
+func (e *VSCodeBasedEditor) Name() string {
+	return e.name
 }
 
-func (e *VSCodeEditor) SupportsProjectType(projectType project.ProjectType) bool {
+func (e *VSCodeBasedEditor) Aliases() []string {
+	return e.aliases
+}
+
+func (e *VSCodeBasedEditor) SupportsProjectType(projectType project.ProjectType) bool {
 	return true
 }
 
-func (e *VSCodeEditor) GetExecutable() string {
-	return "code"
+func (e *VSCodeBasedEditor) GetExecutable() string {
+	return e.executable
 }
 
-func (e *VSCodeEditor) BuildArgs(p *project.Project, window WindowType) ([]string, error) {
+func (e *VSCodeBasedEditor) BuildArgs(p *project.Project, window WindowType) ([]string, error) {
 	args := make([]string, 0)
 
 	switch window {

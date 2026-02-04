@@ -70,7 +70,27 @@ func NewService(cfg config.Config) (*Service, error) {
 	registry := NewRegistry()
 
 	// Registra editores padrão
-	registry.Register(&VSCodeEditor{})
+	registry.Register(&VSCodeBasedEditor{
+		name:       "code",
+		executable: "code",
+		aliases:    []string{"vscode"},
+	})
+	registry.Register(&VSCodeBasedEditor{
+		name:       "cursor",
+		executable: "cursor",
+		aliases:    []string{},
+	})
+	registry.Register(&VSCodeBasedEditor{
+		name:       "windsurf",
+		executable: "windsurf",
+		aliases:    []string{},
+	})
+	registry.Register(&VSCodeBasedEditor{
+		name:       "antigravity",
+		executable: "antigravity",
+		aliases:    []string{},
+	})
+
 	registry.Register(&SublimeEditor{})
 
 	service := &Service{
