@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
+	"github.com/filipenos/projects/pkg/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -19,8 +22,15 @@ func init() {
 		Aliases: []string{"sh", "nu", "bash", "zsh"},
 		RunE:    shell,
 	}
+	shellCmd.Flags().BoolVar(&shellNoWorkspaceDir, "no-workspace-dir", false, "Don't create workspace shell directory, use workspace parent")
+	shellCmd.Flags().BoolVar(&shellNoRebuildWorkspaceDir, "no-rebuild-workspace-dir", false, "Don't rebuild workspace shell directory, create a new temp dir if needed")
 	rootCmd.AddCommand(shellCmd)
 }
+
+var (
+	shellNoWorkspaceDir        bool
+	shellNoRebuildWorkspaceDir bool
+)
 
 func shell(cmdParam *cobra.Command, params []string) error {
 	if len(params) == 0 {
@@ -38,6 +48,10 @@ func shell(cmdParam *cobra.Command, params []string) error {
 	}
 	if err := p.Validate(); err != nil {
 		return err
+	}
+
+	if shellNoWorkspaceDir && shellNoRebuildWorkspaceDir {
+		return fmt.Errorf("flags --no-workspace-dir and --no-rebuild-workspace-dir are mutually exclusive")
 	}
 
 	shell := cmdParam.CalledAs()
@@ -65,8 +79,16 @@ func shell(cmdParam *cobra.Command, params []string) error {
 
 		execDir = p.Path
 		if p.IsWorkspace {
-			parts := strings.Split(p.Path, "/")
-			execDir = strings.Join(parts[:len(parts)-1], "/")
+			if shellNoWorkspaceDir {
+				execDir = workspaceBaseDir(p)
+			} else {
+				workspaceDir, cleanup, err := buildWorkspaceShellDir(p, !shellNoRebuildWorkspaceDir)
+				if err != nil {
+					return err
+				}
+				defer cleanup()
+				execDir = workspaceDir
+			}
 		}
 
 		command = shell
@@ -114,7 +136,111 @@ func shell(cmdParam *cobra.Command, params []string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		if isUserShellExit(err) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func buildWorkspaceShellDir(p *project.Project, rebuild bool) (string, func(), error) {
+	workspacePath := p.Path
+	if workspacePath == "" {
+		workspacePath = p.RootPath
+	}
+
+	ws, err := workspace.Load(workspacePath)
+	if err != nil {
+		return "", nil, err
+	}
+
+	workspaceName := strings.TrimSuffix(filepath.Base(workspacePath), ".code-workspace")
+	if workspaceName == "" || workspaceName == ".code-workspace" {
+		workspaceName = "workspace"
+	}
+
+	baseDir := filepath.Dir(workspacePath)
+	workspaceDir := filepath.Join(baseDir, workspaceName)
+	if rebuild {
+		if err := os.MkdirAll(workspaceDir, 0o755); err != nil {
+			return "", nil, err
+		}
+		if err := clearWorkspaceSymlinks(workspaceDir); err != nil {
+			return "", nil, err
+		}
+	} else {
+		if _, err := os.Stat(workspaceDir); err == nil {
+			workspaceDir, err = os.MkdirTemp(baseDir, workspaceName+"-")
+			if err != nil {
+				return "", nil, err
+			}
+		} else {
+			if !os.IsNotExist(err) {
+				return "", nil, err
+			}
+			if err := os.MkdirAll(workspaceDir, 0o755); err != nil {
+				return "", nil, err
+			}
+		}
+	}
+
+	cleanup := func() {
+		if rebuild {
+			return
+		}
+		_ = os.RemoveAll(workspaceDir)
+	}
+
+	seen := map[string]int{}
+	for _, folderPath := range ws.FoldersPath() {
+		baseName := filepath.Base(folderPath)
+		if baseName == "" || baseName == "." || baseName == string(filepath.Separator) {
+			baseName = "folder"
+		}
+		count := seen[baseName]
+		seen[baseName] = count + 1
+		if count > 0 {
+			baseName = fmt.Sprintf("%s-%d", baseName, count+1)
+		}
+
+		linkPath := filepath.Join(workspaceDir, baseName)
+		if err := os.Symlink(folderPath, linkPath); err != nil {
+			cleanup()
+			return "", nil, err
+		}
+	}
+
+	return workspaceDir, cleanup, nil
+}
+
+func clearWorkspaceSymlinks(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink == 0 {
+			continue
+		}
+		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func workspaceBaseDir(p *project.Project) string {
+	workspacePath := p.Path
+	if workspacePath == "" {
+		workspacePath = p.RootPath
+	}
+	return filepath.Dir(workspacePath)
 }
 
 func CurrentShell() (s string) {
@@ -131,4 +257,20 @@ func commandSeparator(shell string) string {
 		return ";"
 	}
 	return "&&"
+}
+
+func isUserShellExit(err error) bool {
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		return false
+	}
+	if exitErr.ExitCode() == 130 {
+		return true
+	}
+	if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+		if status.Signaled() && status.Signal() == os.Interrupt {
+			return true
+		}
+	}
+	return false
 }
