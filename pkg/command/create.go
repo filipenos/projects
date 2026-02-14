@@ -25,7 +25,7 @@ func init() {
 
 func create(cmdParam *cobra.Command, params []string) error {
 	var (
-		p   = &project.Project{}
+		p   = &project.Project{Enabled: true}
 		err error
 	)
 

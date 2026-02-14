@@ -120,3 +120,11 @@ func TestParseContent(t *testing.T) {
 		t.Fatalf("unexpected parsed result: %+v", p)
 	}
 }
+
+func TestParseContentDefaultsEnabledToTrue(t *testing.T) {
+	data := []byte("name=proj\npath=/tmp\ngroup=dev\n")
+	p := ParseContent(data)
+	if !p.Enabled {
+		t.Fatalf("expected enabled=true by default: %+v", p)
+	}
+}

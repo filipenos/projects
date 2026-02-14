@@ -246,7 +246,7 @@ enabled={{.Enabled}}`
 
 func ParseContent(data []byte) *Project {
 	lines := strings.Split(string(data), "\n")
-	p := &Project{}
+	p := &Project{Enabled: true}
 	for i := range lines {
 		line := strings.TrimSpace(lines[i])
 		values := strings.Split(line, "=")
