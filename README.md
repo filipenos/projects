@@ -21,11 +21,11 @@ After installing, run `projects init` to generate the default config file.
 | `projects update <name>` | Edits an existing project | Accepts `--no-validate` to update paths that do not exist yet |
 | `projects delete <name>` | Deletes an existing project | Removes the project from the configuration |
 | `projects list` | Lists all registered projects | Flags: `--ssh`, `--local`, `--workspace` filter by type (can be combined with AND logic) |
-| `projects code <project>` | Opens the project in the configured editor | Uses aliases defined in `editors.json`. If the editor service fails, run `projects editors reload`. |
+| `projects code <project>` | Opens the project in the configured editor | All built-in editors are available as command aliases (e.g. `projects cursor my-project`) |
 | `projects exec <project> <command...>` | Runs a command inside the project directory | Supports `local` and `ssh` projects (including workspaces) |
 | `projects shell <project>` | Opens a shell inside the project | Supports `local`, `wsl` and `ssh` projects. Aliases: `sh`, `bash`, `zsh`, `nu`. For SSH, uses remote default shell. |
 | `projects session <project> [args...]` | Opens/attaches a terminal session for the project | Aliases: `tmux`, `screen`. Use `--backend` to choose backend. Only supports local/WSL projects. |
-| `projects editors ...` | Manages supported editors | `projects editors init/list/reload` |
+| `projects scan [directory]` | Scans a directory and adds all child dirs as projects | Uses current directory if none given. Skips duplicates. |
 | `projects completion [shell]` | Generates completion scripts | Use `--file` to write to disk instead of stdout |
 | `projects version` | Shows version and commit information | Use `--check-update` or `-c` to check for new releases on GitHub |
 
@@ -164,18 +164,35 @@ projects code my-remote
 - Workspace files (`.code-workspace`) are automatically handled - the parent directory is used as working directory
 - The host must be configured in your SSH config (`~/.ssh/config`)
 
-## Custom editors
+## Supported editors
 
-1. Run `projects editors init` to create `editors.json`.
-2. Edit the file to add binaries such as `cursor`, `goland`, `code-insiders`.
-3. Reload the configuration with `projects editors reload`.
+All editors are available as command aliases. For example, `projects cursor my-project` opens the project directly in Cursor.
 
-**Note:** All configured editors automatically become available as command aliases. For example, if you configure `cursor`, you can use `projects cursor my-project` to open the project directly in Cursor.
-
-To see all available editors and their status:
+| Editor | Command | Executable | Local | SSH/WSL | Window flags | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| VS Code | `code` / `vscode` | `code` | yes | yes | `--window new\|reuse\|add` | Uses `--folder-uri` / `--file-uri` |
+| Cursor | `cursor` | `cursor` | yes | yes | `--window new\|reuse\|add` | VSCode-based |
+| Windsurf | `windsurf` | `windsurf` | yes | yes | `--window new\|reuse\|add` | VSCode-based |
+| Antigravity | `antigravity` | `antigravity` | yes | yes | `--window new\|reuse\|add` | VSCode-based |
+| Vim | `vim` | `vim` | yes | no | — | Opens project path |
+| Neovim | `nvim` | `nvim` | yes | no | — | Opens project path |
+| Emacs | `emacs` | `emacs` | yes | no | — | Opens project path |
+| Zed | `zed` | `zed` | yes | no | — | Opens project path |
+| Sublime Text | `sublime` / `subl` | `subl` | yes | no | `--window new\|add` | Loads workspace folders individually |
+| IntelliJ IDEA | `intellij` / `idea` | `idea` | yes | no | — | Opens project path |
+| GoLand | `goland` | `goland` | yes | no | — | Opens project path |
 
 ```bash
-projects editors list
+# Open in VS Code (default)
+projects code my-project
+
+# Open in a specific editor
+projects cursor my-project
+projects nvim my-project
+projects idea my-project
+
+# Reuse an existing window
+projects code my-project --window reuse
 ```
 
 ## Development

@@ -20,7 +20,7 @@ func TestLoadReturnsDefaultWhenFileMissing(t *testing.T) {
 	}
 }
 
-func TestLoadReadsConfigFileAndBackfillsEditorsPath(t *testing.T) {
+func TestLoadReadsConfigFile(t *testing.T) {
 	restore := setupTempConfig(t)
 	defer restore()
 
@@ -39,9 +39,6 @@ func TestLoadReadsConfigFileAndBackfillsEditorsPath(t *testing.T) {
 	}
 	if cfg.Editor != "vim" {
 		t.Fatalf("expected editor vim, got %s", cfg.Editor)
-	}
-	if cfg.EditorsLocation != editorsConf {
-		t.Fatalf("expected editors location fallback %s, got %s", editorsConf, cfg.EditorsLocation)
 	}
 	if cfg.SessionBackend != defaultSettings.SessionBackend {
 		t.Fatalf("expected default session backend %s, got %s", defaultSettings.SessionBackend, cfg.SessionBackend)
@@ -69,81 +66,24 @@ func TestInitCreatesConfigFile(t *testing.T) {
 	}
 }
 
-func TestInitEditorsCreatesFile(t *testing.T) {
-	restore := setupTempConfig(t)
-	defer restore()
-
-	if err := InitEditors(); err != nil {
-		t.Fatalf("InitEditors failed: %v", err)
-	}
-
-	var editors EditorsConfig
-	readJSON(t, editorsConf, &editors)
-
-	if len(editors.Editors) == 0 {
-		t.Fatalf("expected default editors content")
-	}
-
-	if err := InitEditors(); err == nil {
-		t.Fatalf("expected error when editors config already exists")
-	}
-}
-
-func TestLoadEditors(t *testing.T) {
-	restore := setupTempConfig(t)
-	defer restore()
-
-	cfg := defaultSettings
-
-	loaded, err := LoadEditors(cfg)
-	if err != nil {
-		t.Fatalf("LoadEditors returned error on missing file: %v", err)
-	}
-	if loaded != nil {
-		t.Fatalf("expected nil when file missing")
-	}
-
-	expected := EditorsConfig{
-		Editors: []EditorConfig{
-			{
-				Name:       "custom",
-				Executable: "custom",
-			},
-		},
-	}
-	writeJSON(t, editorsConf, expected)
-
-	loaded, err = LoadEditors(cfg)
-	if err != nil {
-		t.Fatalf("LoadEditors failed: %v", err)
-	}
-	if len(loaded.Editors) != 1 || loaded.Editors[0].Name != "custom" {
-		t.Fatalf("unexpected editors content: %+v", loaded)
-	}
-}
-
 func setupTempConfig(t *testing.T) func() {
 	t.Helper()
 	tmp := t.TempDir()
 
 	oldProjectsConf := projectsConf
 	oldProjectsPath := projectsPath
-	oldEditorsConf := editorsConf
 	oldDefault := defaultSettings
 
 	projectsConf = filepath.Join(tmp, "projects.conf.json")
 	projectsPath = filepath.Join(tmp, "projects.json")
-	editorsConf = filepath.Join(tmp, "editors.conf.json")
 	defaultSettings = Config{
 		ProjectLocation: projectsPath,
 		Editor:          "code",
-		EditorsLocation: editorsConf,
 	}
 
 	return func() {
 		projectsConf = oldProjectsConf
 		projectsPath = oldProjectsPath
-		editorsConf = oldEditorsConf
 		defaultSettings = oldDefault
 	}
 }

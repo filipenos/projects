@@ -1,140 +1,50 @@
 package editor
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/project"
 )
 
-func TestCreateConfigurableEditorValidatesInput(t *testing.T) {
-	s := &Service{}
+func TestNewServiceRegistersBuiltinEditors(t *testing.T) {
+	service := NewService()
 
-	_, err := s.createConfigurableEditor(config.EditorConfig{})
-	if err == nil {
-		t.Fatalf("expected error when name is missing")
+	aliases := service.Aliases()
+	if len(aliases) == 0 {
+		t.Fatalf("expected builtin editor aliases")
 	}
 
-	_, err = s.createConfigurableEditor(config.EditorConfig{Name: "foo"})
-	if err == nil {
-		t.Fatalf("expected error when executable is missing")
+	for _, name := range []string{"cursor", "windsurf", "antigravity", "sublime"} {
+		if _, ok := service.byName[name]; !ok {
+			t.Errorf("expected editor %q to be registered", name)
+		}
 	}
 }
 
-func TestCreateConfigurableEditorBuildsStruct(t *testing.T) {
-	s := &Service{}
-	cfg := config.EditorConfig{
-		Name:       "custom",
-		Aliases:    []string{"alias1"},
-		Executable: "custom-bin",
-		SupportedTypes: []string{
-			string(project.ProjectTypeLocal),
-		},
-		WindowArgs: map[string][]string{
-			string(WindowTypeNew): {"--new"},
-		},
-		WorkspaceArgs: []string{"--workspace"},
-		FolderArgs:    []string{"--folder"},
-		PathPosition:  1,
+func TestAliasesExcludesCodeName(t *testing.T) {
+	service := NewService()
+	for _, a := range service.Aliases() {
+		if a == "code" {
+			t.Fatal("aliases should not include 'code' (it's the main command name)")
+		}
 	}
+}
 
-	editor, err := s.createConfigurableEditor(cfg)
+func TestVSCodeBuildArgs(t *testing.T) {
+	e := vscodeEditor("code", "code", nil)
+
+	p := &project.Project{RootPath: "/tmp/test"}
+	args, err := e.BuildArgs(p, WindowTypeNew)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if editor.Name() != "custom" || editor.GetExecutable() != "custom-bin" {
-		t.Fatalf("invalid editor created: %+v", editor)
-	}
-}
-
-func TestNewServiceLoadsCustomEditors(t *testing.T) {
-	tmp := t.TempDir()
-	editorsPath := filepath.Join(tmp, "editors.json")
-
-	custom := config.EditorsConfig{
-		Editors: []config.EditorConfig{
-			{
-				Name:       "custom",
-				Executable: "custom",
-				Aliases:    []string{"custom"},
-			},
-		},
-	}
-	writeJSON(t, editorsPath, custom)
-
-	cfg := config.Config{
-		EditorsLocation: editorsPath,
+	if len(args) != 3 || args[0] != "--new-window" || args[1] != "--folder-uri" || args[2] != "/tmp/test" {
+		t.Fatalf("unexpected args: %v", args)
 	}
 
-	service, err := NewService(cfg)
-	if err != nil {
-		t.Fatalf("NewService failed: %v", err)
-	}
-
-	foundAlias := false
-	for _, alias := range service.Aliases() {
-		if alias == "custom" {
-			foundAlias = true
-			break
-		}
-	}
-
-	if !foundAlias {
-		t.Fatalf("expected custom editor alias to be registered")
-	}
-}
-
-func TestServiceGetEditorsCategorizesAvailability(t *testing.T) {
-	service := &Service{
-		registry: NewRegistry(),
-	}
-
-	availableExec := filepath.Join(t.TempDir(), "has-bin")
-	if err := os.WriteFile(availableExec, []byte("#!/bin/sh\n"), 0o755); err != nil {
-		t.Fatalf("failed to write temp exec: %v", err)
-	}
-
-	service.RegisterEditor(&fakeEditor{
-		name:       "available",
-		executable: availableExec,
-	})
-	service.RegisterEditor(&fakeEditor{
-		name:       "missing",
-		executable: filepath.Join(t.TempDir(), "missing-bin"),
-	})
-
-	available, missing := service.GetEditors()
-	if len(available) != 1 || available[0] != "available" {
-		t.Fatalf("expected available editor, got %v", available)
-	}
-	if len(missing) != 1 || missing[0] != "missing" {
-		t.Fatalf("expected missing editor, got %v", missing)
-	}
-}
-
-type fakeEditor struct {
-	name       string
-	executable string
-}
-
-func (f *fakeEditor) Name() string                                 { return f.name }
-func (f *fakeEditor) Aliases() []string                            { return []string{} }
-func (f *fakeEditor) SupportsProjectType(project.ProjectType) bool { return true }
-func (f *fakeEditor) BuildArgs(*project.Project, WindowType) ([]string, error) {
-	return nil, nil
-}
-func (f *fakeEditor) GetExecutable() string { return f.executable }
-
-func writeJSON(t *testing.T, path string, data any) {
-	t.Helper()
-	b, err := json.Marshal(data)
-	if err != nil {
-		t.Fatalf("failed to marshal json: %v", err)
-	}
-	if err := os.WriteFile(path, b, 0o644); err != nil {
-		t.Fatalf("failed to write file: %v", err)
+	p.IsWorkspace = true
+	args, _ = e.BuildArgs(p, WindowTypeReuse)
+	if len(args) != 3 || args[0] != "--reuse-window" || args[1] != "--file-uri" {
+		t.Fatalf("unexpected workspace args: %v", args)
 	}
 }

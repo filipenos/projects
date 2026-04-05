@@ -1,34 +1,20 @@
-// command/code.go
 package command
 
 import (
 	"fmt"
 
 	"github.com/filipenos/projects/pkg/editor"
-	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
 	"github.com/spf13/cobra"
 )
 
-var editorService *editor.Service
+var editorService = editor.NewService()
 
 func init() {
-	// Inicializa o serviço de editores
-	var aliases []string
-	if cfgErr == nil {
-		var err error
-		editorService, err = editor.NewService(cfg)
-		if err != nil {
-			log.Warnf("failed to initialize editor service: %v", err)
-		} else {
-			aliases = editorService.Aliases()
-		}
-	}
-
 	codeCmd := &cobra.Command{
 		Use:     "code",
-		Aliases: aliases,
+		Aliases: editorService.Aliases(),
 		Short:   fmt.Sprintf("Edit your project using the editor (%s as default)", cfg.Editor),
 		RunE:    code,
 	}
@@ -37,10 +23,6 @@ func init() {
 }
 
 func code(cmdParam *cobra.Command, params []string) error {
-	if editorService == nil {
-		return fmt.Errorf("editor service not initialized; run 'projects editors reload'")
-	}
-
 	if len(params) == 0 {
 		return fmt.Errorf("project name is required")
 	}
@@ -59,7 +41,6 @@ func code(cmdParam *cobra.Command, params []string) error {
 		return err
 	}
 
-	// Converte a flag window para o tipo apropriado
 	windowFlag := SafeStringFlag(cmdParam, "window")
 	var window editor.WindowType
 
@@ -72,8 +53,5 @@ func code(cmdParam *cobra.Command, params []string) error {
 		window = editor.WindowTypeNew
 	}
 
-	// Usa o serviço de editores para abrir o projeto
 	return editorService.OpenProject(cmdParam.CalledAs(), p, window)
 }
-
-// Comandos auxiliares para gerenciar editores

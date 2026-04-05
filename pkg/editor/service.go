@@ -1,4 +1,3 @@
-// pkg/editor/service.go
 package editor
 
 import (
@@ -6,13 +5,12 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
 	"github.com/filipenos/projects/pkg/project"
+	"github.com/filipenos/projects/pkg/workspace"
 )
 
-// WindowType representa os tipos de janela suportados
 type WindowType string
 
 const (
@@ -21,245 +19,174 @@ const (
 	WindowTypeAdd   WindowType = "add"
 )
 
-// Editor define a interface que todos os editores devem implementar
-type Editor interface {
-	Name() string
-	Aliases() []string
-	SupportsProjectType(projectType project.ProjectType) bool
-	BuildArgs(p *project.Project, window WindowType) ([]string, error)
-	GetExecutable() string
+type Editor struct {
+	Name       string
+	Executable string
+	Aliases    []string
+	LocalOnly  bool
+	BuildArgs  func(p *project.Project, window WindowType) ([]string, error)
 }
 
-// Registry mantém o registro de editores disponíveis
-type Registry struct {
-	editors       map[string]Editor
-	uniqueEditors []Editor
+var editors = []Editor{
+	// VSCode-based editors (support local + remote)
+	vscodeEditor("code", "code", []string{"vscode"}),
+	vscodeEditor("cursor", "cursor", nil),
+	vscodeEditor("windsurf", "windsurf", nil),
+	vscodeEditor("antigravity", "antigravity", nil),
+	// Simple editors (local only, just receive the path)
+	simpleEditor("vim", "vim", nil),
+	simpleEditor("nvim", "nvim", nil),
+	simpleEditor("emacs", "emacs", nil),
+	simpleEditor("zed", "zed", nil),
+	{
+		Name:       "sublime",
+		Executable: "subl",
+		Aliases:    []string{"subl"},
+		LocalOnly:  true,
+		BuildArgs: func(p *project.Project, window WindowType) ([]string, error) {
+			var args []string
+			switch window {
+			case WindowTypeNew:
+				args = append(args, "--new-window")
+			case WindowTypeAdd:
+				args = append(args, "--add")
+			}
+			if p.IsWorkspace {
+				w, err := workspace.Load(p.RootPath)
+				if err != nil {
+					return nil, err
+				}
+				args = append(args, w.FoldersPath()...)
+			} else {
+				args = append(args, p.RootPath)
+			}
+			return args, nil
+		},
+	},
+	simpleEditor("intellij", "idea", []string{"idea"}),
+	simpleEditor("goland", "goland", nil),
 }
 
-// NewRegistry cria uma nova instância do registro
-func NewRegistry() *Registry {
-	return &Registry{
-		editors:       make(map[string]Editor),
-		uniqueEditors: make([]Editor, 0),
+func simpleEditor(name, executable string, aliases []string) Editor {
+	return Editor{
+		Name:       name,
+		Executable: executable,
+		Aliases:    aliases,
+		LocalOnly:  true,
+		BuildArgs: func(p *project.Project, window WindowType) ([]string, error) {
+			return []string{p.RootPath}, nil
+		},
 	}
 }
 
-// Register registra um editor no sistema
-func (r *Registry) Register(editor Editor) {
-	r.editors[editor.Name()] = editor
-	r.uniqueEditors = append(r.uniqueEditors, editor)
-	for _, alias := range editor.Aliases() {
-		r.editors[alias] = editor
+func vscodeEditor(name, executable string, aliases []string) Editor {
+	return Editor{
+		Name:       name,
+		Executable: executable,
+		Aliases:    aliases,
+		BuildArgs: func(p *project.Project, window WindowType) ([]string, error) {
+			var args []string
+			switch window {
+			case WindowTypeReuse:
+				args = append(args, "--reuse-window")
+			case WindowTypeAdd:
+				args = append(args, "--add")
+			default:
+				args = append(args, "--new-window")
+			}
+			if p.IsWorkspace {
+				args = append(args, "--file-uri")
+			} else {
+				args = append(args, "--folder-uri")
+			}
+			args = append(args, p.RootPath)
+			return args, nil
+		},
 	}
 }
 
-// Get retorna um editor pelo nome ou alias
-func (r *Registry) Get(name string) (Editor, bool) {
-	editor, exists := r.editors[name]
-	return editor, exists
-}
-
-// Service gerencia as operações com editores
 type Service struct {
-	registry *Registry
-	config   config.Config
+	byName map[string]*Editor
 }
 
-// NewService cria uma nova instância do serviço
-func NewService(cfg config.Config) (*Service, error) {
-	registry := NewRegistry()
-
-	// Registra editores padrão
-	registry.Register(&VSCodeBasedEditor{
-		name:       "code",
-		executable: "code",
-		aliases:    []string{"vscode"},
-	})
-	registry.Register(&VSCodeBasedEditor{
-		name:       "cursor",
-		executable: "cursor",
-		aliases:    []string{},
-	})
-	registry.Register(&VSCodeBasedEditor{
-		name:       "windsurf",
-		executable: "windsurf",
-		aliases:    []string{},
-	})
-	registry.Register(&VSCodeBasedEditor{
-		name:       "antigravity",
-		executable: "antigravity",
-		aliases:    []string{},
-	})
-
-	registry.Register(&SublimeEditor{})
-
-	service := &Service{
-		registry: registry,
-		config:   cfg,
-	}
-
-	// Carrega editores customizados
-	if err := service.loadCustomEditors(); err != nil {
-		// Log do erro mas não falha na inicialização
-		log.Warnf("Failed to load custom editors: %v", err)
-	}
-
-	return service, nil
-}
-
-// loadCustomEditors carrega editores do arquivo de configuração
-func (s *Service) loadCustomEditors() error {
-	editorsConfig, err := config.LoadEditors(s.config)
-	if err != nil {
-		return err
-	}
-
-	if editorsConfig == nil {
-		return nil // Arquivo não existe
-	}
-
-	for _, editorConfig := range editorsConfig.Editors {
-		editor, err := s.createConfigurableEditor(editorConfig)
-		if err != nil {
-			return fmt.Errorf("failed to create editor '%s': %w", editorConfig.Name, err)
-		}
-		s.registry.Register(editor)
-	}
-
-	return nil
-}
-
-func (s *Service) createConfigurableEditor(cfg config.EditorConfig) (*ConfigurableEditor, error) {
-	if cfg.Name == "" {
-		return nil, fmt.Errorf("editor name is required")
-	}
-
-	if cfg.Executable == "" {
-		return nil, fmt.Errorf("editor executable is required")
-	}
-
-	// Converte tipos de projeto
-	supportedTypes := make([]project.ProjectType, 0, len(cfg.SupportedTypes))
-	for _, typeStr := range cfg.SupportedTypes {
-		projectType := project.ProjectType(typeStr)
-		supportedTypes = append(supportedTypes, projectType)
-	}
-
-	// Converte argumentos de janela
-	windowArgs := make(map[WindowType][]string)
-	for windowStr, args := range cfg.WindowArgs {
-		windowType := WindowType(windowStr)
-		windowArgs[windowType] = args
-	}
-
-	return &ConfigurableEditor{
-		name:           cfg.Name,
-		aliases:        cfg.Aliases,
-		executable:     cfg.Executable,
-		supportedTypes: supportedTypes,
-		windowArgs:     windowArgs,
-		workspaceArgs:  cfg.WorkspaceArgs,
-		folderArgs:     cfg.FolderArgs,
-		pathPosition:   cfg.PathPosition,
-	}, nil
-}
-
-// RegisterEditor registra um novo editor
-func (s *Service) RegisterEditor(editor Editor) {
-	s.registry.Register(editor)
-}
-
-// GetEditors retorna todos os editores disponíveis
-func (s *Service) GetEditors() (avaliables []string, notAvailable []string) {
-	seen := make(map[string]bool)
-
-	for _, editor := range s.registry.uniqueEditors {
-		name := editor.Name()
-		if _, ok := seen[name]; ok {
-			continue
-		}
-
-		seen[name] = true
-		if path.ExistsInPathOrAsFile(editor.GetExecutable()) {
-			avaliables = append(avaliables, name)
-		} else {
-			notAvailable = append(notAvailable, name)
+func NewService() *Service {
+	s := &Service{byName: make(map[string]*Editor)}
+	for i := range editors {
+		e := &editors[i]
+		s.byName[e.Name] = e
+		for _, alias := range e.Aliases {
+			s.byName[alias] = e
 		}
 	}
-
-	return
+	return s
 }
 
 func (s *Service) Aliases() []string {
-	seenAliases := make(map[string]bool)
-	aliases := make([]string, 0)
-
-	for _, editor := range s.registry.uniqueEditors {
-		editorName := editor.Name()
-
-		// Skip "code" as it's the main command name, not an alias
-		if editorName == "code" {
-			// Only add the other aliases for the code editor
-			for _, alias := range editor.Aliases() {
-				if !seenAliases[alias] {
-					aliases = append(aliases, alias)
-					seenAliases[alias] = true
+	seen := make(map[string]bool)
+	var aliases []string
+	for _, e := range editors {
+		if e.Name == "code" {
+			for _, a := range e.Aliases {
+				if !seen[a] {
+					aliases = append(aliases, a)
+					seen[a] = true
 				}
 			}
 			continue
 		}
-
-		// Add the editor name itself if not already added
-		if !seenAliases[editorName] {
-			aliases = append(aliases, editorName)
-			seenAliases[editorName] = true
+		if !seen[e.Name] {
+			aliases = append(aliases, e.Name)
+			seen[e.Name] = true
 		}
-
-		// Add all aliases for this editor
-		for _, alias := range editor.Aliases() {
-			if !seenAliases[alias] {
-				aliases = append(aliases, alias)
-				seenAliases[alias] = true
+		for _, a := range e.Aliases {
+			if !seen[a] {
+				aliases = append(aliases, a)
+				seen[a] = true
 			}
 		}
 	}
-
 	return aliases
 }
 
-// OpenProject abre um projeto no editor especificado
+func (s *Service) GetEditors() (available []string, notAvailable []string) {
+	for _, e := range editors {
+		if path.ExistsInPathOrAsFile(e.Executable) {
+			available = append(available, e.Name)
+		} else {
+			notAvailable = append(notAvailable, e.Name)
+		}
+	}
+	return
+}
+
 func (s *Service) OpenProject(editorName string, p *project.Project, window WindowType) error {
-	editor, exists := s.registry.Get(editorName)
-	if !exists {
+	e, ok := s.byName[editorName]
+	if !ok {
 		return fmt.Errorf("editor '%s' not found", editorName)
 	}
 
-	if !editor.SupportsProjectType(p.ProjectType) {
-		return fmt.Errorf("editor '%s' does not support project type '%s'",
-			editor.Name(), p.ProjectType)
+	if e.LocalOnly && p.ProjectType != project.ProjectTypeLocal {
+		return fmt.Errorf("editor '%s' does not support project type '%s'", e.Name, p.ProjectType)
 	}
 
-	args, err := editor.BuildArgs(p, window)
+	args, err := e.BuildArgs(p, window)
 	if err != nil {
-		return fmt.Errorf("failed to build args for editor '%s': %w", editor.Name(), err)
+		return fmt.Errorf("failed to build args for editor '%s': %w", e.Name, err)
 	}
 
-	executable := editor.GetExecutable()
+	if err := path.EnsureExecutable(e.Executable); err != nil {
+		return fmt.Errorf("editor '%s': %w", e.Name, err)
+	}
+
 	openType := "folder"
 	if p.IsWorkspace {
 		openType = "file"
 	}
+	log.Infof("open %s '%s' on '%s'", openType, p.RootPath, e.Executable)
 
-	if err := path.EnsureExecutable(executable); err != nil {
-		return fmt.Errorf("editor '%s': %w", editor.Name(), err)
-	}
-
-	log.Infof("open %s '%s' on '%s'", openType, p.RootPath, executable)
-
-	cmd := exec.Command(executable, args...)
+	cmd := exec.Command(e.Executable, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
 	return cmd.Run()
 }
