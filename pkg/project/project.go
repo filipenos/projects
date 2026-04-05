@@ -89,6 +89,29 @@ type Project struct {
 	IsWorkspace bool        `json:"-"`
 }
 
+// SSHInfo extracts the SSH host and remote path from an SSH project.
+func (p *Project) SSHInfo() (host string, remotePath string, err error) {
+	if p.ProjectType != ProjectTypeSSH {
+		return "", "", fmt.Errorf("project is not SSH type")
+	}
+
+	i := strings.Index(p.Domain, "+")
+	if i == -1 {
+		return "", "", fmt.Errorf("invalid SSH path format: missing host in %q", p.RootPath)
+	}
+	host = p.Domain[i+1:]
+	remotePath = p.Path
+
+	if p.IsWorkspace {
+		parts := strings.Split(remotePath, "/")
+		if len(parts) > 1 {
+			remotePath = strings.Join(parts[:len(parts)-1], "/")
+		}
+	}
+
+	return host, remotePath, nil
+}
+
 func (p *Project) Validate() error {
 	if p.Name == "" {
 		return ErrNameRequired

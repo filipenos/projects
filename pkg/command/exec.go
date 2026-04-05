@@ -55,32 +55,18 @@ func execCmd(cmdParam *cobra.Command, params []string) error {
 
 	case project.ProjectTypeSSH:
 		log.Infof("executing on ssh host")
-		i := strings.Index(p.RootPath, "+")
-		if i == -1 {
-			return fmt.Errorf("invalid path format")
-		}
-		subPath := p.RootPath[i+1:]
-		i = strings.Index(subPath, "/")
-		if i == -1 {
-			return fmt.Errorf("invalid path format")
-		}
-		sshHost := subPath[:i]
-		sshPath := subPath[i:]
-
-		if p.IsWorkspace {
-			parts := strings.Split(sshPath, "/")
-			if len(parts) > 1 {
-				sshPath = strings.Join(parts[:len(parts)-1], "/")
-			}
+		sshHost, sshPath, err := p.SSHInfo()
+		if err != nil {
+			return err
 		}
 
-		// Constrói o comando completo com argumentos
+		// Build remote command with properly quoted arguments
 		var remoteCmd strings.Builder
-		remoteCmd.WriteString(fmt.Sprintf("cd %s && %s", sshPath, command))
+		remoteCmd.WriteString(fmt.Sprintf("cd %s && %s", shellQuote(sshPath), shellQuote(command)))
 		if len(params) > 2 {
 			for _, arg := range params[2:] {
 				remoteCmd.WriteString(" ")
-				remoteCmd.WriteString(arg)
+				remoteCmd.WriteString(shellQuote(arg))
 			}
 		}
 

@@ -103,23 +103,9 @@ func shell(cmdParam *cobra.Command, params []string) error {
 		}
 
 		log.Infof("opening shell on ssh host")
-		i := strings.Index(p.RootPath, "+")
-		if i == -1 {
-			return fmt.Errorf("invalid path format")
-		}
-		subPath := p.RootPath[i+1:]
-		i = strings.Index(subPath, "/")
-		if i == -1 {
-			return fmt.Errorf("invalid path format")
-		}
-		sshHost := subPath[:i]
-		sshPath := subPath[i:]
-
-		if p.IsWorkspace {
-			parts := strings.Split(sshPath, "/")
-			if len(parts) > 1 {
-				sshPath = strings.Join(parts[:len(parts)-1], "/")
-			}
+		sshHost, sshPath, err := p.SSHInfo()
+		if err != nil {
+			return err
 		}
 
 		command = "ssh"
@@ -249,6 +235,13 @@ func CurrentShell() (s string) {
 		s = "bash"
 	}
 	return
+}
+
+func shellQuote(s string) string {
+	if s == "" {
+		return "''"
+	}
+	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }
 
 func commandSeparator(shell string) string {

@@ -12,11 +12,8 @@ func Exist(path string) bool {
 	if path == "" {
 		return false
 	}
-	info, err := os.Stat(path)
-	if err != nil {
-		return os.IsExist(err)
-	}
-	return info != nil
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // SafeName return the name or find from pwd

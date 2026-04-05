@@ -62,10 +62,12 @@ func init() {
 		Use:   "reload",
 		Short: "Reload editors configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg := config.Load()
+			reloadedCfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
 
-			var err error
-			editorService, err = editor.NewService(cfg)
+			editorService, err = editor.NewService(reloadedCfg)
 			if err != nil {
 				return fmt.Errorf("failed to reload editor service: %w", err)
 			}

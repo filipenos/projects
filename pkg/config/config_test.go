@@ -11,7 +11,10 @@ func TestLoadReturnsDefaultWhenFileMissing(t *testing.T) {
 	restore := setupTempConfig(t)
 	defer restore()
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if cfg != defaultSettings {
 		t.Fatalf("expected default config %+v, got %+v", defaultSettings, cfg)
 	}
@@ -27,7 +30,10 @@ func TestLoadReadsConfigFileAndBackfillsEditorsPath(t *testing.T) {
 	}
 	writeJSON(t, projectsConf, custom)
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if cfg.ProjectLocation != custom.ProjectLocation {
 		t.Fatalf("expected project location %s, got %s", custom.ProjectLocation, cfg.ProjectLocation)
 	}

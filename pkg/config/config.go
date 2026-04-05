@@ -46,20 +46,20 @@ type EditorsConfig struct {
 }
 
 // Load load configuration used on projects
-func Load() Config {
+func Load() (Config, error) {
 	file, err := loadFile(projectsConf)
 	if err != nil {
-		panic(err)
+		return defaultSettings, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	if file == nil {
+		return defaultSettings, nil
 	}
 	defer file.Close()
 
-	if file == nil {
-		return defaultSettings
-	}
-
 	var config Config
 	if err := json.NewDecoder(file).Decode(&config); err != nil {
-		panic(err)
+		return defaultSettings, fmt.Errorf("failed to decode config: %w", err)
 	}
 
 	// Se EditorsLocation não estiver definido, usa o padrão
@@ -67,7 +67,7 @@ func Load() Config {
 		config.EditorsLocation = editorsConf
 	}
 
-	return config
+	return config, nil
 }
 
 // LoadEditors carrega a configuração de editores

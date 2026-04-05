@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/filipenos/projects/pkg/config"
@@ -8,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var cfg = config.Load()
+var cfg, cfgErr = config.Load()
 
 //https://github.com/liamg/sunder
 
@@ -16,6 +17,12 @@ var cfg = config.Load()
 var rootCmd = &cobra.Command{
 	Use:  "projects",
 	Long: `Have all your work projects in one place. Open, edit in a much simpler way.`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if cfgErr != nil {
+			return fmt.Errorf("failed to load configuration: %w", cfgErr)
+		}
+		return nil
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

@@ -4,7 +4,6 @@ package command
 import (
 	"fmt"
 
-	"github.com/filipenos/projects/pkg/config"
 	"github.com/filipenos/projects/pkg/editor"
 	"github.com/filipenos/projects/pkg/log"
 	"github.com/filipenos/projects/pkg/path"
@@ -15,19 +14,16 @@ import (
 var editorService *editor.Service
 
 func init() {
-	// Carrega a configuração
-	cfg := config.Load()
-
 	// Inicializa o serviço de editores
-	var (
-		err     error
-		aliases []string
-	)
-	editorService, err = editor.NewService(cfg)
-	if err != nil {
-		log.Warnf("failed to initialize editor service: %v", err)
-	} else {
-		aliases = editorService.Aliases()
+	var aliases []string
+	if cfgErr == nil {
+		var err error
+		editorService, err = editor.NewService(cfg)
+		if err != nil {
+			log.Warnf("failed to initialize editor service: %v", err)
+		} else {
+			aliases = editorService.Aliases()
+		}
 	}
 
 	codeCmd := &cobra.Command{
